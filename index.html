@@ -3,191 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE FX SNIPER KITCHEN II</title>
+    <title>THE FX SNIPER KITCHEN II | OPERATIONAL TERMINAL</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .glow-green { text-shadow: 0 0 12px rgba(34, 197, 94, 0.5); }
-        .glow-red { text-shadow: 0 0 12px rgba(239, 68, 68, 0.5); }
-        .glow-indigo { text-shadow: 0 0 15px rgba(99, 102, 241, 0.6); }
-        .glass-card { background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(51, 65, 85, 0.5); backdrop-filter: blur(12px); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap');
+        
+        :root { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        .fancy-gradient { background: linear-gradient(135deg, #4f46e5 0%, #a855f7 50%, #ec4899 100%); }
+        .glass-card { background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(51, 65, 85, 0.4); backdrop-filter: blur(14px); }
+        .neo-green { color: #22c55e; text-shadow: 0 0 10px rgba(34, 197, 94, 0.4); }
+        .neo-red { color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+        .neo-indigo { color: #818cf8; text-shadow: 0 0 10px rgba(129, 140, 248, 0.4); }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen p-2 md:p-6 flex flex-col items-center selection:bg-indigo-500/30">
+<body class="bg-[#0b1019] text-slate-100 min-h-screen p-2 md:p-4 selection:bg-indigo-500/30">
 
-    <div class="w-full max-w-5xl flex flex-col gap-4">
+    <div class="w-full max-w-7xl mx-auto flex flex-col gap-4">
         
-        <div class="glass-card rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 border-l-4 border-indigo-500">
+        <header class="glass-card rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 border-l-4 border-indigo-500 shadow-xl">
             <div class="flex items-center gap-4 w-full md:w-auto">
-                <div class="relative w-16 h-16 bg-slate-950 rounded-xl border border-dashed border-slate-700 hover:border-indigo-500 flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden shrink-0 group">
+                <div class="relative w-16 h-16 bg-[#06090f] rounded-xl border border-dashed border-slate-700 hover:border-indigo-500 flex items-center justify-center cursor-pointer transition-all overflow-hidden shrink-0 group">
                     <input type="file" id="logoInput" class="absolute inset-0 opacity-0 cursor-pointer z-10" accept="image/*" />
-                    <div id="uploadPlaceholder" class="flex flex-col items-center text-center p-1">
-                        <i data-lucide="upload-cloud" class="w-5 h-5 text-slate-500 group-hover:text-indigo-400 transition-colors"></i>
-                        <span class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">LOGO</span>
+                    <div id="uploadPlaceholder" class="flex flex-col items-center text-center p-1 text-slate-500 group-hover:text-indigo-400 transition-colors">
+                        <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                        <span class="text-[8px] font-bold uppercase mt-0.5">LOGO</span>
                     </div>
-                    <img id="logoPreview" class="w-full h-full object-cover hidden absolute inset-0" alt="FX Sniper Logo" />
+                    <img id="logoPreview" class="w-full h-full object-cover hidden absolute inset-0" alt="Kitchen Logo" />
                 </div>
                 
                 <div>
-                    <h1 class="text-xl md:text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-slate-100 via-indigo-200 to-slate-400">THE FX SNIPER KITCHEN II</h1>
-                    <p class="text-xs font-mono font-bold text-amber-400 tracking-wide mt-0.5">Motto: ONE SHOT, ONE KILL! 💥</p>
-                </div>
-            </div>
-            
-            <div class="bg-slate-950/80 border border-slate-800 p-2.5 rounded-xl text-center md:text-right max-w-sm">
-                <p class="text-[11px] font-medium italic text-slate-400 leading-normal">"Ponder the path of thy feet, and let all thy ways be established."</p>
-                <p class="text-[10px] font-mono font-bold text-indigo-400 mt-1">Proverbs 4:26 (KJV) 📖⚖️</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div class="glass-card rounded-xl p-3.5 text-center relative overflow-hidden">
-                <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Reset Progress</div>
-                <div class="flex items-center justify-center gap-2 mt-1">
-                    <button id="decCount" class="w-5 h-5 rounded bg-slate-800 text-xs font-bold active:scale-90">-</button>
-                    <div id="extractionDisplay" class="text-xl font-black text-emerald-400 font-mono glow-green">5 / 50</div>
-                    <button id="incCount" class="w-5 h-5 rounded bg-slate-800 text-xs font-bold active:scale-90">+</button>
-                </div>
-                <div class="text-[9px] text-slate-500 font-mono mt-0.5">Surgical Extractions 🏗️</div>
-            </div>
-            
-            <div class="glass-card rounded-xl p-3.5 text-center">
-                <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Current R-Total</div>
-                <div id="rTotalDisplay" class="text-xl font-black text-indigo-400 font-mono glow-indigo mt-1">+5.98R</div>
-                <div class="text-[9px] text-slate-500 font-mono mt-0.5">Risk Multipliers Extracted 📈</div>
-            </div>
-
-            <div class="glass-card rounded-xl p-3.5 text-center">
-                <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Demo Balance</div>
-                <div id="balanceDisplay" class="text-xl font-black text-emerald-400 font-mono mt-1">$105.99</div>
-                <div class="text-[9px] text-slate-500 font-mono mt-0.5">Start: $100.00 Demo 💵</div>
-            </div>
-
-            <div class="glass-card rounded-xl p-3.5 text-center flex flex-col justify-center items-center">
-                <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Session Horizon</div>
-                <div id="clockHUD" class="text-sm font-mono font-black text-amber-400 bg-slate-950/80 px-2.5 py-1 border border-slate-800 rounded-lg tracking-widest">00:00:00 WAT</div>
-                <div class="text-[9px] text-slate-500 font-mono mt-1">Active: Mon, May 11, 2026 🏛️</div>
-            </div>
-        </div>
-
-        <div class="w-full bg-slate-900 rounded-full h-2.5 border border-slate-800/80 overflow-hidden">
-            <div id="progressBar" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 10%"></div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-            
-            <div class="space-y-4 lg:col-span-1">
-                
-                <div class="glass-card rounded-xl p-4">
-                    <h2 class="text-xs font-black uppercase tracking-widest text-indigo-400 mb-3 flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
-                        <i data-lucide="clock" class="w-3.5 h-3.5"></i> Trading Windows (WAT)
-                    </h2>
-                    <div class="space-y-1.5 text-xs font-mono">
-                        <div class="flex justify-between py-0.5"><span class="text-slate-400">MON:</span> <span class="text-slate-200 font-bold">07:30 - 09:30</span></div>
-                        <div class="flex justify-between py-0.5"><span class="text-slate-400">TUE:</span> <span class="text-slate-200 font-bold">08:00 - 10:30</span></div>
-                        <div class="flex justify-between py-0.5"><span class="text-slate-400">WED:</span> <span class="text-slate-200 font-bold">08:00 - 10:00</span></div>
-                        <div class="flex justify-between py-0.5"><span class="text-slate-400">THU:</span> <span class="text-slate-200 font-bold">15:30 - 17:30</span></div>
-                        <div class="flex justify-between py-0.5"><span class="text-slate-400">FRI:</span> <span class="text-slate-200 font-bold">16:00 - 17:30</span></div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-xl md:text-2xl font-black uppercase tracking-wider text-transparent bg-clip-text fancy-gradient">THE FX SNIPER KITCHEN II</h1>
+                        <span class="text-[9px] bg-emerald-500/10 text-emerald-400 font-mono px-2 py-0.5 border border-emerald-500/20 rounded-full">ACTIVE PHASE 0</span>
                     </div>
-                </div>
-
-                <div class="glass-card rounded-xl p-4">
-                    <h2 class="text-xs font-black uppercase tracking-widest text-emerald-400 mb-3 flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
-                        <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Approved Assets (3 Pairs)
-                    </h2>
-                    <div class="space-y-2 text-xs">
-                        <div class="flex items-center justify-between bg-slate-950/50 p-2 border border-slate-800 rounded-lg">
-                            <span class="font-mono font-bold text-slate-200">GBP/USD</span> <span class="text-[10px] text-slate-400 font-medium">The Cable 🇬🇧🇺🇸</span>
-                        </div>
-                        <div class="flex items-center justify-between bg-slate-950/50 p-2 border border-slate-800 rounded-lg">
-                            <span class="font-mono font-bold text-slate-200">AUD/USD</span> <span class="text-[10px] text-slate-400 font-medium">The Aussie 🇦🇺🇺🇸</span>
-                        </div>
-                        <div class="flex items-center justify-between bg-slate-950/50 p-2 border border-slate-800 rounded-lg">
-                            <span class="font-mono font-bold text-slate-200">EUR/GBP</span> <span class="text-[10px] text-slate-400 font-medium">The Chunnel 🇪🇺🇬🇧</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass-card rounded-xl p-4 space-y-3 text-xs">
-                    <h2 class="text-xs font-black uppercase tracking-widest text-rose-400 flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
-                        <i data-lucide="sliders" class="w-3.5 h-3.5"></i> Capacity & Risk Settings
-                    </h2>
-                    <ul class="space-y-2 font-mono text-[11px] text-slate-300">
-                        <li class="flex items-center gap-1.5"><i data-lucide="check" class="w-3 h-3 text-indigo-400"></i> Fixed Lot Size: 0.01 (Non-negotiable)</li>
-                        <li class="flex items-center gap-1.5"><i data-lucide="check" class="w-3 h-3 text-indigo-400"></i> Max Trades: 1 Per Day</li>
-                        <li class="flex items-center gap-1.5 text-rose-400"><i data-lucide="alert-triangle" class="w-3 h-3"></i> 1-Loss Rule: Hits SL = Kitchen Closed 🚫</li>
-                        <li class="flex items-center gap-1.5 text-emerald-400"><i data-lucide="award" class="w-3 h-3"></i> 1-Win Rule: Hits TP = Closed for day</li>
-                    </ul>
+                    <p class="text-[10px] font-medium text-slate-400 mt-0.5">"Ponder the path...estableished." — Proverbs 4:26 (KJV) 📖⚖️</p>
                 </div>
             </div>
+            
+            <div class="bg-[#06090f]/80 border border-slate-800 p-2.5 rounded-xl text-center md:text-right max-w-sm">
+                <p id="dateHUD" class="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">MON, May 11, 2026🏛️</p>
+                <span id="clockHUD" class="text-lg font-mono font-extrabold text-amber-400 tracking-widest mt-0.5 inline-block">00:00:00 WAT</span>
+            </div>
+        </header>
 
-            <div class="space-y-4 lg:col-span-2">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div class="glass-card rounded-xl p-3 text-center">
+                <div class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Kitchen Account</div>
+                <div id="balanceDisplay" class="text-2xl font-black text-emerald-400 font-mono neo-green mt-1">$105.99</div>
+                <p class="text-[9px] text-slate-500 font-mono">Start: $100.00 Demo 🌄</p>
+            </div>
+            <div class="glass-card rounded-xl p-3 text-center">
+                <div class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Reset Progress</div>
+                <div id="extractionDisplay" class="text-2xl font-black text-slate-200 font-mono mt-1">5 / 50</div>
+                <p class="text-[9px] text-slate-500 font-mono">Surgical Extractions🏗️</p>
+            </div>
+            <div class="glass-card rounded-xl p-3 text-center">
+                <div class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Net R-Total</div>
+                <div id="rTotalDisplay" class="text-2xl font-black text-indigo-400 font-mono neo-indigo mt-1">+5.98R</div>
+                <p class="text-[9px] text-slate-500 font-mono">Risk Multipliers Extracted 📈</p>
+            </div>
+            <div class="glass-card rounded-xl p-3 text-center col-span-1 md:col-span-1">
+                <div class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Surgical Win Rate</div>
+                <div id="winRateDisplay" class="text-2xl font-black text-emerald-400 font-mono mt-1">100%</div>
+                <p class="text-[9px] text-slate-500 font-mono">Live Conviction Analytics 🎯</p>
+            </div>
+            <div class="glass-card rounded-xl p-3 text-center col-span-1 md:col-span-1">
+                <div class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Max Streaks</div>
+                <div class="flex items-center justify-center gap-1.5 mt-1 font-mono">
+                    <span id="streakWin" class="text-2xl font-black text-emerald-400">0</span>
+                    <span class="text-lg text-slate-600">|</span>
+                    <span id="streakLoss" class="text-2xl font-black text-red-500">0</span>
+                </div>
+                <p class="text-[9px] text-slate-500 font-mono">Wins | Losses 🧱</p>
+            </div>
+        </div>
+
+        <div class="w-full bg-[#06090f] rounded-full h-1.5 border border-slate-800 overflow-hidden shadow-inner">
+            <div id="progressBar" class="bg-gradient-to-r from-indigo-500 to-emerald-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 10%"></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-10 gap-4 items-start">
+            
+            <div class="lg:col-span-4 space-y-4">
                 
-                <div class="glass-card rounded-xl p-4 md:p-5">
+                <div class="glass-card rounded-xl p-4 md:p-5 shadow-lg">
                     <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
                         <h2 class="text-xs font-black uppercase tracking-widest text-slate-200 flex items-center gap-1.5">
-                            <i data-lucide="terminal" class="w-4 h-4 text-indigo-400"></i> Tactical Execution System
+                            <i data-lucide="terminal" class="w-4 h-4 text-indigo-400"></i> Active Operational Ledger
                         </h2>
-                        <span class="text-[10px] bg-slate-950 text-slate-400 border border-slate-800 px-2 py-0.5 rounded font-mono font-bold">10-MIN OFFSET MANDATE</span>
+                        <span class="text-[9px] bg-slate-950 text-slate-400 border border-slate-800 px-2.5 py-0.5 rounded font-mono font-bold tracking-tight">PHASE 0 MANDATE</span>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <button id="strikeBtn" class="bg-emerald-600/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/20 font-black py-3 px-3 rounded-xl flex items-center justify-center gap-2 text-xs uppercase tracking-wider transition-all active:scale-95 cursor-pointer">
-                            <i data-lucide="crosshair" class="w-4 h-4"></i> Strike Authorized
-                        </button>
-                        <button id="vetoBtn" class="bg-rose-600/10 border border-rose-500/30 text-rose-400 hover:bg-rose-600/20 font-black py-3 px-3 rounded-xl flex items-center justify-center gap-2 text-xs uppercase tracking-wider transition-all active:scale-95 cursor-pointer">
-                            <i data-lucide="ban" class="w-4 h-4"></i> Veto Mandated
-                        </button>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Live Active Workspace Ledger</label>
-                        <div class="relative">
-                            <textarea id="logInput" rows="10" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-slate-200 font-mono text-xs leading-relaxed focus:outline-none focus:border-indigo-500/80 placeholder-slate-700 resize-none" placeholder="// Input execution logs, ATR/ADX indicators, alpha calculations, or active journal modifications..."></textarea>
-                            <div class="absolute bottom-2.5 right-2.5 flex items-center gap-1 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-[9px] font-mono text-slate-500">
-                                <i data-lucide="cpu" class="w-2.5 h-2.5 text-indigo-400"></i> SYSTEM PERSISTENT
-                            </div>
+                    <div class="space-y-3 mb-4 text-[11px] font-mono">
+                        <div class="flex justify-between items-center gap-1 bg-slate-950 border border-slate-800 p-2 rounded-lg">
+                            <span class="text-slate-500">Pairs monitored:</span>
+                            <span class="text-slate-200">GBPUSD | AUDUSD | EURGBP</span>
+                        </div>
+                        <div class="flex justify-between items-center gap-1 bg-slate-950 border border-slate-800 p-2 rounded-lg">
+                            <span class="text-slate-500">Risk Allocation:</span>
+                            <span class="text-slate-200">Fixed 0.01 Lot | 1 Per Day</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-center text-[10px] font-bold">
+                            <div class="bg-rose-950/20 border border-rose-900/30 p-2 rounded-lg text-rose-300">🛑 1-Loss = Kitchen Closed</div>
+                            <div class="bg-emerald-950/20 border border-emerald-900/30 p-2 rounded-lg text-emerald-300">✅ 1-Win = Kitchen Closed</div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-                        <button id="saveBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition duration-200 shadow-lg shadow-indigo-600/10 active:scale-[0.98] flex items-center justify-center gap-2 text-xs uppercase tracking-wider cursor-pointer">
-                            <i data-lucide="save" class="w-3.5 h-3.5"></i> Commit Ledger State
-                        </button>
-                        <button id="clearBtn" class="w-full bg-slate-950 hover:bg-slate-900 text-slate-400 border border-slate-800 font-bold py-3 rounded-xl transition duration-200 active:scale-[0.98] flex items-center justify-center gap-2 text-xs uppercase tracking-wider cursor-pointer">
-                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Factory Reset Fields
-                        </button>
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Current Session Workspace</label>
+                        <textarea id="ledgerText" rows="12" class="w-full bg-[#06090f]/80 border border-slate-800 rounded-xl p-3 text-slate-100 font-mono text-xs leading-relaxed focus:outline-none focus:border-indigo-500/80 placeholder-slate-700 resize-none shadow-inner" placeholder="// Log session frameworks, indicators, or trade notes here..."></textarea>
                     </div>
 
-                    <div id="statusHUD" class="text-center text-xs font-semibold text-emerald-400 mt-3 opacity-0 transition-opacity duration-300 flex items-center justify-center gap-1">
-                        <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Matrix metrics localized successfully!
+                    <div id="hudAlert" class="text-center text-xs font-semibold text-emerald-400 mt-2.5 opacity-0 transition-opacity duration-300 flex items-center justify-center gap-1.5">
+                        <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Operations safe-saved to device matrix!
                     </div>
                 </div>
 
-                <div class="glass-card rounded-xl p-4">
-                    <h3 class="text-xs font-black uppercase tracking-widest text-amber-400 mb-3 flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
-                        <i data-lucide="alert-octagon" class="w-4 h-4"></i> Section VI: Law of News Veto Protocol
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px] font-mono">
-                        <div class="bg-rose-950/20 border border-rose-900/40 p-2.5 rounded-lg">
-                            <div class="font-bold text-rose-400 uppercase tracking-wide flex items-center gap-1 mb-1">
-                                <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span> Red Impact
-                            </div>
-                            <p class="text-slate-400 text-[10px] leading-relaxed">T - 5m to T + 60m full system freeze. NFP, CPI, FOMC, GDP.</p>
-                        </div>
-                        <div class="bg-amber-950/20 border border-amber-900/40 p-2.5 rounded-lg">
-                            <div class="font-bold text-amber-400 uppercase tracking-wide flex items-center gap-1 mb-1">
-                                <span class="w-2 h-2 rounded-full bg-amber-500"></span> Orange Impact
-                            </div>
-                            <p class="text-slate-400 text-[10px] leading-relaxed">T - 2m to T + 30m entry hold. Speeches, Core PMIs.</p>
-                        </div>
-                        <div class="bg-slate-950/60 border border-slate-800 p-2.5 rounded-lg">
-                            <div class="font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1 mb-1">
-                                <span class="w-2 h-2 rounded-full bg-slate-500"></span> Yellow Impact
-                            </div>
-                            <p class="text-slate-400 text-[10px] leading-relaxed">No structural freeze. Under Beta technical supervision.</p>
+                <div class="glass-card rounded-xl p-4 md:p-5 border-t-2 border-indigo-400 shadow-xl relative overflow-hidden">
+                    <div class="absolute -right-6 -bottom-6 text-indigo-950 font-black text-8xl pointer-events-none select-none">🤖</div>
+                    <div class="relative z-10 space-y-3">
+                        <h3 class="text-xs font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2 border-b border-slate-800 pb-2">
+                            <i data-lucide="brain-circuit" class="w-4 h-4"></i> AI Coach Assistant 🤖
+                        </h3>
+                        <div id="aiFeedback" class="text-slate-300 text-xs font-mono leading-relaxed space-y-2 whitespace-pre-line pr-6">
+                            // Analyzing recent operational cycles... need more trade history to generate debug report. Current focus: Discipline over dopamine. ONE SHOT, ONE KILL.
                         </div>
                     </div>
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-6 space-y-4">
+                
+                <div class="glass-card rounded-xl p-4 md:p-5 shadow-lg space-y-4">
+                    <div class="flex items-center justify-between gap-4">
+                        <h2 class="text-xs font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2">
+                            <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Visual Analytics Engine
+                        </h2>
+                        <p class="text-[9px] text-slate-500 font-mono">Live generation from journal entries.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-[#06090f]/50 p-2.5 border border-slate-800/80 rounded-xl">
+                            <canvas id="equityChart" height="150"></canvas>
+                        </div>
+                        <div class="bg-[#06090f]/50 p-2.5 border border-slate-800/80 rounded-xl flex flex-col items-center">
+                            <canvas id="distributionChart" height="150" width="150"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-xl p-4 md:p-5 border-t-2 border-emerald-400 shadow-xl">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                        <h2 class="text-xs font-black uppercase tracking-widest text-slate-100 flex items-center gap-2">
+                            <i data-lucide="book-open" class="w-4 h-4 text-emerald-400"></i> New Surgical Extraction Log
+                        </h2>
+                        <span class="text-[9px] bg-slate-950 text-slate-400 border border-slate-800 px-2.5 py-0.5 rounded font-mono font-bold tracking-tight">SESSION VERDICT</span>
+                    </div>
+
+                    <form id="journalForm" class="space-y-4">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Pair Traded</label>
+                                <select id="entryPair" class="w-full bg-[#06090f] border border-slate-800 rounded-lg p-2.5 text-slate-100 font-mono text-xs focus:border-indigo-500">
+                                    <option value="GBPUSD">GBP/USD</option>
+                                    <option value="AUDUSD">AUD/USD</option>
+                                    <option value="EURGBP">EUR/GBP</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Direction</label>
+                                <select id="entryDir" class="w-full bg-[#06090f] border border-slate-800 rounded-lg p-2.5 text-slate-100 font-mono text-xs focus:border-indigo-500">
+                                    <option value="BUY 📈">BUY</option>
+                                    <option value="SELL 📉">SELL</option>
+                                </select>
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Psych Check & Emotional State</label>
+                                <input type="text" id="entryPsych" placeholder="e.g. Calm, obeyed protocol, slight urge to check candles..." class="w-full bg-[#06090f] border border-slate-800 rounded-lg p-2.5 text-slate-100 font-sans text-xs focus:border-indigo-500 placeholder-slate-600" />
+                            </div>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Execution Coordinates & Calibration Notes</label>
+                            <input type="text" id="entryNotes" placeholder="e.g. Recalibrated SL due to bullish slippage, validated ATR thresholds..." class="w-full bg-[#06090f] border border-slate-800 rounded-lg p-2.5 text-slate-100 font-mono text-xs focus:border-indigo-500 placeholder-slate-600" />
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <button type="button" data-result="win" class="log-btn bg-emerald-600/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/20 font-black py-3 rounded-lg flex items-center justify-center gap-2 text-xs uppercase transition-all active:scale-95 cursor-pointer">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i> TP Hit (+1.5R)
+                            </button>
+                            <button type="button" data-result="loss" class="log-btn bg-red-600/10 border border-red-500/30 text-red-400 hover:bg-red-600/20 font-black py-3 rounded-lg flex items-center justify-center gap-2 text-xs uppercase transition-all active:scale-95 cursor-pointer">
+                                <i data-lucide="x-circle" class="w-4 h-4"></i> SL Hit (-1R)
+                            </button>
+                            <button type="button" data-result="scratch" class="log-btn bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 font-black py-3 rounded-lg flex items-center justify-center gap-2 text-xs uppercase transition-all active:scale-95 cursor-pointer">
+                                <i data-lucide="separator-horizontal" class="w-4 h-4"></i> Scratch (±0)
+                            </button>
+                            <button type="button" data-result="veto" class="log-btn bg-amber-600/10 border border-amber-500/30 text-amber-400 hover:bg-amber-600/20 font-black py-3 rounded-lg flex items-center justify-center gap-2 text-xs uppercase transition-all active:scale-95 cursor-pointer">
+                                <i data-lucide="ban" class="w-4 h-4"></i> Veto Blocked
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="glass-card rounded-xl p-4 md:p-5 shadow-lg space-y-3">
+                    <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 border-b border-slate-800 pb-2.5">
+                        <i data-lucide="list-video" class="w-4 h-4"></i> Chronological Session History Feed
+                    </h2>
+                    <div id="journalFeed" class="space-y-3 max-h-[400px] overflow-y-auto pr-2 font-mono text-[11px] leading-snug whitespace-pre-wrap">
+                        // No extractions finalized. Kitchen inactive.
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-xl p-4 text-center mt-6">
+                    <button id="resetTerminal" class="bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-600 text-[10px] font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 mx-auto active:scale-95 transition-all">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Factory Reset Persistent Terminal State
+                    </button>
                 </div>
 
             </div>
@@ -195,193 +230,300 @@
     </div>
 
     <script>
-        // Start Lucide Icons System
         lucide.createIcons();
 
-        // DOM Target References
-        const logInput = document.getElementById('logInput');
-        const saveBtn = document.getElementById('saveBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const strikeBtn = document.getElementById('strikeBtn');
-        const vetoBtn = document.getElementById('vetoBtn');
-        const statusHUD = document.getElementById('statusHUD');
+        // Target Elements HUD & DISPLAYS
+        const uiClock = document.getElementById('clockHUD');
+        const uiBalance = document.getElementById('balanceDisplay');
+        const uiExtraction = document.getElementById('extractionDisplay');
+        const uiRTotal = document.getElementById('rTotalDisplay');
+        const uiWinRate = document.getElementById('winRateDisplay');
+        const uiStreakWin = document.getElementById('streakWin');
+        const uiStreakLoss = document.getElementById('streakLoss');
+        const uiProgressBar = document.getElementById('progressBar');
+        const hudAlert = document.getElementById('hudAlert');
         const logoInput = document.getElementById('logoInput');
         const logoPreview = document.getElementById('logoPreview');
         const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+        const inputLedger = document.getElementById('ledgerText');
+        const feedJournal = document.getElementById('journalFeed');
+        const coachFeedback = document.getElementById('aiFeedback');
         
-        // Metrics Displays
-        const extractionDisplay = document.getElementById('extractionDisplay');
-        const rTotalDisplay = document.getElementById('rTotalDisplay');
-        const balanceDisplay = document.getElementById('balanceDisplay');
-        const progressBar = document.getElementById('progressBar');
-        const incCount = document.getElementById('incCount');
-        const  decCount = document.getElementById('decCount');
+        // JOURNAL INPUT FIELDS
+        const formJournal = document.getElementById('journalForm');
+        const entryPair = document.getElementById('entryPair');
+        const entryDir = document.getElementById('entryDir');
+        const entryPsych = document.getElementById('entryPsych');
+        const entryNotes = document.getElementById('entryNotes');
+        const btnsLog = document.querySelectorAll('.log-btn');
+        const btnReset = document.getElementById('resetTerminal');
 
-        // Master Core Core Architecture Storage Scheme State
-        let kitchenState = {
-            extractions: 5,
-            target: 50,
-            rTotal: 5.98,
+        // Master Application Persistent State Matrix
+        let systemState = {
+            activeDate: "Mon, May 11, 2026🏛️",
             balance: 105.99,
-            logoImg: "",
-            ledgerText: `THE FX SNIPER KITCHEN II\nBIBLE VERSE: "Ponder the path of thy feet..."\nACTIVE DATE: Mon, May 11, 2026\n--------------------------------------\n// Day 8 Status: Complete\nPROGRESS: [ 5 / 50 ]\nCURRENT R-TOTAL: +5.98R\nDEMO BALANCE: $105.99\n--------------------------------------\n`
+            extractions: 5,
+            targetExtractions: 50,
+            rTotal: 5.98,
+            logoImg: null,
+            ledgerText: `THE FX SNIPER KITCHEN II\nBIBLE VERSE: "Ponder the path...estableished."\nACTIVE DATE: Mon, May 11, 2026\n--------------------------------------\n// Kitchen initialized. Reset Progress [ 5 / 50 ]\n// Persistent metrics verified.\n`,
+            journalEntries: []
         };
 
-        // Initialize Audio Framework Sandbox
-        let sndCtx = null;
-        function loadAudio() { if (!sndCtx) { sndCtx = new (window.AudioContext || window.webkitAudioContext)(); } }
+        // Simulated AI Coach Heuristics Generator
+        function generateAiFeedback(newEntries = []) {
+            if (systemState.journalEntries.length === 0) return "// Analyzing recent operational cycles... ONE SHOT, ONE KILL.";
+            
+            const total = systemState.journalEntries.filter(e => e.result !== 'Vetoed').length;
+            const wins = systemState.journalEntries.filter(e => e.result === 'TP Hit').length;
+            const winRate = total > 0 ? (wins / total) : 1;
+            
+            let feedback = "";
+            let focus = "";
 
-        function triggerBeep(profile) {
+            if (winRate > 0.6) {
+                feedback += `🔥 Exceptional precision detected. System efficiency sits in elite hedge-fund brackets. Motivation locked.\n`;
+                focus = "Optimize Dynamic Re-Synchronization Protocol execution speed.";
+            } else if (winRate > 0.4) {
+                feedback += `💡 Efficiency sits within standard operational margin. Continue rigorous data scan filtering.\n`;
+                focus = "Refine L9 (DXY) Correlation Audit during 10-minute window.";
+            } else {
+                feedback += `⚠️ Efficiency breached. Immediate diagnostic audit required on execution discipline.\n`;
+                focus = "Re-validate L1 Trend Lock & L4 Candle Structure Veto thresholds before next strike.";
+            }
+
+            // Streak check simulation
+            if (systemState.streakLoss >= 2) feedback += `🧠 WARNING: Cognitive bias threat detected. Emotional detachment required to prevent dopamine-chasing. Accept loss or close platform.\n`;
+            if (systemState.streakWin >= 3) feedback += `🧠 EGO AUDIT: Rising ego confidence detected. Resurrender to clock & distance rules.\n`;
+
+            return `⚡ BEHAVIORAL AUDIT:\n${feedback}\n🎯 NEXT SESSION FOCUS:\n1. Hit button at Min 10.\n2. ${focus}`;
+        }
+
+        // TACTICAL AUDIO SYSTEM ENGINE MODULE
+        let sndCtx = null;
+        function loadAudioSandbox() { if (!sndCtx) { sndCtx = new (window.AudioContext || window.webkitAudioContext)(); } }
+        function fireAudio(type) {
             try {
-                loadAudio();
-                if (!sndCtx) return;
-                const osc = sndCtx.createOscillator();
-                const gain = sndCtx.createGain();
-                osc.connect(gain);
-                gain.connect(sndCtx.destination);
+                loadAudioSandbox(); if (!sndCtx) return;
+                const o = sndCtx.createOscillator();
+                const g = sndCtx.createGain();
+                o.connect(g); g.connect(sndCtx.destination);
                 const t = sndCtx.currentTime;
 
-                if (profile === 'click') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(1000, t);
-                    gain.gain.setValueAtTime(0.04, t);
-                    gain.gain.linearRampToValueAtTime(0.001, t + 0.04);
-                    osc.start(t); osc.stop(t + 0.04);
-                } else if (profile === 'strike') {
-                    // Double High-Frequency TP Laser Strike
-                    [0, 0.07].forEach((d) => {
-                        const o = sndCtx.createOscillator();
-                        const g = sndCtx.createGain();
-                        o.connect(g); g.connect(sndCtx.destination);
-                        o.type = 'triangle';
-                        o.frequency.setValueAtTime(1600 + (d*600), sndCtx.currentTime + d);
-                        g.gain.setValueAtTime(0.04, sndCtx.currentTime + d);
-                        g.gain.linearRampToValueAtTime(0.001, sndCtx.currentTime + d + 0.07);
-                        o.start(sndCtx.currentTime + d); o.stop(sndCtx.currentTime + d + 0.07);
+                if (type === 'tp') {
+                    [0, 0.08].forEach((d) => {
+                        const oc = sndCtx.createOscillator(); const ga = sndCtx.createGain();
+                        oc.connect(ga); ga.connect(sndCtx.destination);
+                        oc.type = 'triangle';
+                        oc.frequency.setValueAtTime(1500 + (d * 1000), sndCtx.currentTime + d);
+                        oc.frequency.exponentialRampToValueAtTime(2000, sndCtx.currentTime + d + 0.08);
+                        ga.gain.setValueAtTime(0.06, sndCtx.currentTime + d);
+                        ga.gain.linearRampToValueAtTime(0.001, sndCtx.currentTime + d + 0.08);
+                        oc.start(sndCtx.currentTime + d); oc.stop(sndCtx.currentTime + d + 0.08);
                     });
-                } else if (profile === 'veto') {
-                    // Industrial Veto Intercept Warning
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(180, t);
-                    osc.frequency.linearRampToValueAtTime(60, t + 0.3);
-                    const f = sndCtx.createBiquadFilter();
-                    f.type = 'lowpass'; f.frequency.setValueAtTime(280, t);
-                    osc.disconnect(gain); osc.connect(f); f.connect(gain);
-                    gain.gain.setValueAtTime(0.15, t);
-                    gain.gain.linearRampToValueAtTime(0.001, t + 0.3);
-                    osc.start(t); osc.stop(t + 0.3);
+                } else if (type === 'sl') {
+                    o.type = 'sawtooth'; o.frequency.setValueAtTime(330, t);
+                    o.frequency.exponentialRampToValueAtTime(110, t + 0.2);
+                    g.gain.setValueAtTime(0.07, t); g.gain.linearRampToValueAtTime(0.001, t + 0.2);
+                    o.start(t); o.stop(t + 0.2);
+                } else if (type === 'veto') {
+                    o.type = 'square'; o.frequency.setValueAtTime(440, t);
+                    o.frequency.setValueAtTime(330, t + 0.1);
+                    g.gain.setValueAtTime(0.05, t); g.gain.linearRampToValueAtTime(0.001, t + 0.2);
+                    o.start(t); o.stop(t + 0.2);
                 }
             } catch(e) { console.log(e); }
         }
 
-        // Render Telemetry Outputs
-        function refreshHUD() {
-            extractionDisplay.textContent = `${kitchenState.extractions} / ${kitchenState.target}`;
-            rTotalDisplay.textContent = `${kitchenState.rTotal >= 0 ? '+' : ''}${kitchenState.rTotal.toFixed(2)}R`;
-            balanceDisplay.textContent = `$${kitchenState.balance.toFixed(2)}`;
+        // PERSISTENT DATA RECOVERY & HUd RENDERING CORE
+        function getJournalFeedMarkup() {
+            if (systemState.journalEntries.length === 0) return "// No finalized extractions in this memory matrix.";
             
-            const ratio = Math.round((kitchenState.extractions / kitchenState.target) * 100);
-            progressBar.style.width = `${ratio}%`;
-            
-            if (kitchenState.logoImg) {
-                logoPreview.src = kitchenState.logoImg;
-                logoPreview.classList.remove('hidden');
-                uploadPlaceholder.classList.add('hidden');
-            } else {
-                logoPreview.classList.add('hidden');
-                uploadPlaceholder.classList.remove('hidden');
-            }
+            return systemState.journalEntries.slice().reverse().map((entry, index) => {
+                const color = entry.result === 'TP Hit' ? 'neo-green' : entry.result === 'SL Hit' ? 'neo-red' : entry.result === 'Vetoed' ? 'neo-amber text-amber-400' : 'text-slate-400';
+                const resultIcon = entry.result === 'TP Hit' ? '🎯' : entry.result === 'SL Hit' ? '❌' : entry.result === 'Vetoed' ? '🚫' : '⚖️';
+                const rVal = entry.result === 'TP Hit' ? '+1.5R' : entry.result === 'SL Hit' ? '-1.0R' : '±0R';
+                
+                return `<div class="bg-[#06090f] p-3 rounded-lg border border-slate-800 shadow-inner">
+                    <div class="flex justify-between items-center gap-2 border-b border-slate-800 pb-1.5 mb-1.5">
+                        <span class="font-bold text-slate-200">Session ${systemState.journalEntries.length - index}: ${entry.pair} (${entry.dir})</span>
+                        <span class="text-slate-500">${entry.timestamp} WAT</span>
+                    </div>
+                    <p class="font-sans leading-relaxed text-slate-300">Notes: ${entry.notes || '// N/A'} | Psych: ${entry.psych || '// N/A'}</p>
+                    <div class="flex justify-between items-center mt-2.5 pt-2 border-t border-slate-800">
+                        <span class="${color} font-bold tracking-tight">${resultIcon} Verdict: ${entry.result}</span>
+                        <span class="text-indigo-400 font-bold">${rVal} extracted</span>
+                    </div>
+                </div>`;
+            }).join('');
         }
 
-        function saveConfig() {
-            kitchenState.ledgerText = logInput.value;
-            localStorage.setItem('fx_sniper_kitchen_state', JSON.stringify(kitchenState));
+        // Charts System Module Implementation
+        let chartEquity = null;
+        let chartDistribution = null;
+
+        function refreshAnalyticsVisuals() {
+            systemState.ledgerText = inputLedger.value;
+            localStorage.setItem('fx_sniper_system_matrix_data_v2', JSON.stringify(systemState));
+
+            // Dashboard Metrics Calculations
+            const totalTrades = systemState.journalEntries.filter(e => e.result !== 'Vetoed').length;
+            const totalVetoes = systemState.journalEntries.filter(e => e.result === 'Vetoed').length;
+            const wins = systemState.journalEntries.filter(e => e.result === 'TP Hit').length;
+            const losses = systemState.journalEntries.filter(e => e.result === 'SL Hit').length;
+            const scratches = systemState.journalEntries.filter(e => e.result === 'Scratch').length;
+            
+            const winRate = totalTrades > 0 ? (wins / totalTrades) : 1;
+            uiWinRate.textContent = `${(winRate * 100).toFixed(0)}%心里`;
+            uiExtraction.textContent = `${systemState.extractions} / ${systemState.targetExtractions}`;
+            uiBalance.textContent = `$${systemState.balance.toFixed(2)}`;
+            uiRTotal.textContent = `${systemState.rTotal >= 0 ? '+' : ''}${systemState.rTotal.toFixed(2)}R`;
+            
+            const pct = Math.round((systemState.extractions / systemState.targetExtractions) * 100);
+            uiProgressBar.style.width = `${pct}%`;
+
+            // Calculate Max Streaks
+            let maxWins = 0, maxLoss = 0, curWin = 0, curLoss = 0;
+            systemState.journalEntries.forEach(entry => {
+                if (entry.result === 'TP Hit') { curWin++; curLoss = 0; if(curWin > maxWins) maxWins = curWin; }
+                else if (entry.result === 'SL Hit') { curLoss++; curWin = 0; if(curLoss > maxLoss) maxLoss = curLoss; }
+                else if (entry.result === 'Scratch') { curWin = 0; curLoss = 0; }
+            });
+            systemState.streakWin = maxWins;
+            systemState.streakLoss = maxLoss;
+            uiStreakWin.textContent = maxWins;
+            uiStreakLoss.textContent = maxLoss;
+
+            feedJournal.innerHTML = getJournalFeedMarkup();
+            coachFeedback.innerHTML = generateAiFeedback();
+            refreshCharts(totalVetoes, wins, losses, scratches);
         }
 
-        // Load Pipeline Configuration
+        // CHART GENERATION SUB-MODULE
+        function refreshCharts(v, w, l, s) {
+            Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'JetBrains Mono'; Chart.defaults.font.size = 9;
+
+            if(chartEquity) chartEquity.destroy();
+            const equityCtx = document.getElementById('equityChart').getContext('2d');
+            const dataPts = [105.99, ...systemState.journalEntries.map(e => e.equityTrace)];
+            const labels = ['Start', ...systemState.journalEntries.map((_, i) => `S${i+1}`)];
+
+            chartEquity = new Chart(equityCtx, {
+                type: 'line',
+                data: { labels: labels, datasets: [{
+                    label: 'Equity Curve', data: dataPts,
+                    borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.05)',
+                    borderWidth: 2, tension: 0.1, fill: true, pointRadius: 2, pointBackgroundColor: '#22c55e'
+                }]},
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                    scales: { y: { grid: { color: 'rgba(51,65,85,0.3)' } }, x: { grid: { display: false } } } }
+            });
+
+            if(chartDistribution) chartDistribution.destroy();
+            const distCtx = document.getElementById('distributionChart').getContext('2d');
+            chartDistribution = new Chart(distCtx, {
+                type: 'doughnut',
+                data: { labels: ['TP', 'SL', 'Scratch', 'Veto'], datasets: [{
+                    data: [w, l, s, v],
+                    backgroundColor: ['#10b981', '#ef4444', '#94a3b8', '#f59e0b'],
+                    borderColor: '#0b1019', borderWidth: 3
+                }]},
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%',
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, padding: 8 } } } }
+            });
+        }
+
+        // LOAD PERSISTENT SYSTEM CORE
         window.addEventListener('DOMContentLoaded', () => {
-            const raw = localStorage.getItem('fx_sniper_kitchen_state');
+            const raw = localStorage.getItem('fx_sniper_system_matrix_data_v2');
             if (raw) {
-                kitchenState = JSON.parse(raw);
-                logInput.value = kitchenState.ledgerText;
-            } else {
-                logInput.value = kitchenState.ledgerText;
-            }
-            refreshHUD();
+                systemState = JSON.parse(raw);
+                inputLedger.value = systemState.ledgerText;
+                if (systemState.logoImg) {
+                    logoPreview.src = systemState.logoImg;
+                    logoPreview.classList.remove('hidden');
+                    uploadPlaceholder.classList.add('hidden');
+                }
+            } else { inputLedger.value = systemState.ledgerText; }
+            refreshAnalyticsVisuals();
         });
 
-        // Event Counters Actions
-        incCount.addEventListener('click', () => {
-            triggerBeep('click');
-            if(kitchenState.extractions < kitchenState.target) {
-                kitchenState.extractions++;
-                kitchenState.balance += 1.20; // Simulated $1.20 increments based on logs
-                kitchenState.rTotal += 1.50;  // 1.5R target addition
-                refreshHUD(); saveConfig();
-            }
+        // SURGICAL JOURNAL SUBMISSION HOOK ENGINE
+        btnsLog.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const result = e.currentTarget.getAttribute('data-result');
+                const timestamp = uiClock.textContent.replace(' WAT', '');
+                
+                loadAudioSandbox();
+                
+                let rEarned = 0, cashEarned = 0, countDelta = 0;
+                let verdictLabel = "", verdictAudio = 'veto';
+
+                if (result === 'win') {
+                    verdictLabel = "TP Hit"; rEarned = 1.5; cashEarned = 1.20; countDelta = 1; verdictAudio = 'tp';
+                } else if (result === 'loss') {
+                    verdictLabel = "SL Hit"; rEarned = -1; cashEarned = -0.80; countDelta = -1; verdictAudio = 'sl';
+                } else if (result === 'scratch') { verdictLabel = "Scratch"; }
+                else if (result === 'veto') { verdictLabel = "Vetoed"; countDelta = -1;}
+
+                fireAudio(verdictAudio);
+
+                // Update system state metrics mathematically
+                systemState.rTotal += rEarned;
+                systemState.balance += cashEarned;
+                // Clamp extraction count [0-50] margin
+                systemState.extractions = Math.min(Math.max(systemState.extractions + countDelta, 0), systemState.targetExtractions);
+
+                // Construct new extraction binary entry
+                const newExtractionEntry = {
+                    timestamp: timestamp,
+                    pair: entryPair.value,
+                    dir: entryDir.value,
+                    psych: entryPsych.value.trim(),
+                    notes: entryNotes.value.trim(),
+                    result: verdictLabel,
+                    equityTrace: systemState.balance // for the curve
+                };
+
+                // Commit log to history chain
+                systemState.journalEntries.push(newExtractionEntry);
+                formJournal.reset();
+                refreshAnalyticsVisuals();
+            });
         });
 
-        decCount.addEventListener('click', () => {
-            triggerBeep('click');
-            if(kitchenState.extractions > 0) {
-                kitchenState.extractions--;
-                kitchenState.balance -= 1.20;
-                kitchenState.rTotal -= 1.50;
-                refreshHUD(); saveConfig();
-            }
-        });
-
-        // Trigger Strike / Veto Injections
-        strikeBtn.addEventListener('click', () => {
-            triggerBeep('strike');
-            const stamp = new Date().toLocaleTimeString('en-GB', { timeZone: 'Africa/Lagos', hour12: false });
-            logInput.value += `\n[${stamp} WAT] // HUNTER CORE: STRIKE POSITION CONFIRMED. EXECUTE 0.01 MARKET ORDER ASSET VALUE AT TIMEFRAME CLOSE.`;
-            saveConfig();
-        });
-
-        vetoBtn.addEventListener('click', () => {
-            triggerBeep('veto');
-            const stamp = new Date().toLocaleTimeString('en-GB', { timeZone: 'Africa/Lagos', hour12: false });
-            logInput.value += `\n[${stamp} WAT] // SHIELD CORE: ENVIRONMENT INTERCEPT BREACH WARNING. EXECUTION BLOCKED BY PROTOCOL LAW. STAND DOWN.`;
-            saveConfig();
-        });
-
-        // Core Actions Buttons
-        saveBtn.addEventListener('click', () => {
-            triggerBeep('click');
-            saveConfig();
-            statusHUD.classList.remove('opacity-0');
-            setTimeout(() => statusHUD.classList.add('opacity-0'), 2500);
-        });
-
-        clearBtn.addEventListener('click', () => {
-            triggerBeep('veto');
-            if(confirm("Confirm system flush? All persistent custom state memory metrics will reset to base defaults.")) {
-                localStorage.removeItem('fx_sniper_kitchen_state');
-                location.reload();
-            }
-        });
-
-        // Image Binary Loader System Converter
+        // Binary Image Loader Converter Matrix
         logoInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(event) {
-                    kitchenState.logoImg = event.target.result;
-                    refreshHUD();
-                    saveConfig();
+                    systemState.logoImg = event.target.result;
+                    logoPreview.src = event.target.result;
+                    logoPreview.classList.remove('hidden');
+                    uploadPlaceholder.classList.add('hidden');
+                    localStorage.setItem('fx_sniper_system_matrix_data_v2', JSON.stringify(systemState));
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        // Live Real-Time WAT Clock Implementation
-        function updateClock() {
-            const timeString = new Date().toLocaleTimeString('en-GB', { timeZone: 'Africa/Lagos', hour12: false });
-            document.getElementById('clockHUD').textContent = `${timeString} WAT`;
+        // Core App Logic Triggers
+        inputLedger.addEventListener('input', () => { systemState.ledgerText = inputLedger.value; localStorage.setItem('fx_sniper_system_matrix_data_v2', JSON.stringify(systemState)); });
+        
+        btnReset.addEventListener('click', () => {
+            if(confirm("Factory Reset Persistent Console State? Every localized operational metric and memory matrix will be permanently purged.")) {
+                fireAudio('sl'); localStorage.removeItem('fx_sniper_system_matrix_data_v2'); location.reload();
+            }
+        });
+
+        // Real-Time WAT Clock Implementation System
+        function runClock() {
+            const options = { timeZone: 'Africa/Lagos', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            const timeString = new Date().toLocaleTimeString('en-GB', options);
+            uiClock.textContent = `${timeString} WAT`;
         }
-        setInterval(updateClock, 1000); updateClock();
+        setInterval(runClock, 1000); runClock();
     </script>
 </body>
     </html>
