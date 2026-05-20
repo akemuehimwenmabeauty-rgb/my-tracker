@@ -1,1 +1,2007 @@
-# my-tracker
+import React, { useState, useEffect, useRef } from 'react';
+
+// ==========================================
+// TACTICAL SOUND SYSTEM (Web Audio API)
+// ==========================================
+const playSound = (type) => {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    
+    switch (type) {
+      case 'click': {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1200, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.05, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.05);
+        break;
+      }
+      case 'success': {
+        // High-pitch laser double-beep for TP Hit
+        [0, 0.08].forEach((delay) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(1500 + (delay * 1000), ctx.currentTime + delay);
+          osc.frequency.exponentialRampToValueAtTime(2000, ctx.currentTime + delay + 0.08);
+          gain.gain.setValueAtTime(0.08, ctx.currentTime + delay);
+          gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + delay + 0.08);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + delay);
+          osc.stop(ctx.currentTime + delay + 0.08);
+        });
+        break;
+      }
+      case 'veto': {
+        // Deep structural lock hum
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(80, ctx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        
+        // Add a lowpass filter to make it warmer/subby
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(300, ctx.currentTime);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+        break;
+      }
+      case 'warning': {
+        // Quick dual alert hum
+        [0, 0.1].forEach((delay) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, ctx.currentTime + delay);
+          osc.frequency.setValueAtTime(380, ctx.currentTime + delay + 0.08);
+          gain.gain.setValueAtTime(0.07, ctx.currentTime + delay);
+          gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + delay + 0.08);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + delay);
+          osc.stop(ctx.currentTime + delay + 0.08);
+        });
+        break;
+      }
+      default:
+        break;
+    }
+  } catch (e) {
+    console.warn("Web Audio block/unsupported", e);
+  }
+};
+
+// ==========================================
+// PRE-LOADED REAL TRADING JOURNAL DATA
+// ==========================================
+const initialJournal = [
+  {
+    day: 1,
+    date: "2026-05-11",
+    dayLabel: "Mon, 11 May",
+    startBalance: 100.00,
+    endBalance: 100.00,
+    rTotalDay: 0.0,
+    sessionStart: "07:30",
+    sessionEnd: "09:30",
+    strikes: [
+      {
+        id: "d1-s1",
+        time: "08:30:00",
+        pair: "GBP/USD",
+        direction: "BUY",
+        lot: 0.01,
+        status: "VETOED",
+        rejectionEngine: "BETA",
+        rejectionReason: "L9 GLOBAL CORRELATION CONFLICT. DXY spiking aggressively due to geopolitical tensions. Entering a BUY while USD is gaining rapid strength is a suicide mission. L7 Gravity at 1.36000 acts as heavy resistance.",
+        tp: 1.36052,
+        sl: 1.35960,
+        resultAmount: 0,
+        rEarned: 0
+      }
+    ],
+    summary: "No other pairs got to our ATR & ADX thresholds during the remaining session window. Absolute capital preservation.",
+    psychCheck: {
+      execution: "Disciplined. Handled the DXY conflict veto perfectly. Kitchen closed per protocol.",
+      emotion: "No frustration. Respected the structural environment."
+    }
+  },
+  {
+    day: 2,
+    date: "2026-05-12",
+    dayLabel: "Tue, 12 May",
+    startBalance: 100.00,
+    endBalance: 101.20,
+    rTotalDay: 1.5,
+    sessionStart: "08:00",
+    sessionEnd: "10:30",
+    strikes: [
+      {
+        id: "d2-s1",
+        time: "08:10:00",
+        pair: "GBP/USD",
+        direction: "SELL",
+        lot: 0.01,
+        status: "VETOED",
+        rejectionEngine: "BETA",
+        rejectionReason: "Temporal Veto (News Proximity). Entry placed directly inside the FOMC kill zone. Execution denied to protect equity.",
+        tp: 0,
+        sl: 0,
+        resultAmount: 0,
+        rEarned: 0
+      },
+      {
+        id: "d2-s2",
+        time: "08:40:00",
+        pair: "GBP/USD",
+        direction: "SELL",
+        lot: 0.01,
+        status: "TP HIT",
+        tp: 1.35207,
+        sl: 1.35407,
+        entryPrice: 1.35327,
+        exitPrice: 1.35207,
+        exitTime: "08:45:10",
+        resultAmount: 1.20,
+        rEarned: 1.5,
+        duration: "5m 10s"
+      }
+    ],
+    summary: "Beautiful trade execution post-news window. Capital fully preserved during FOMC risk, extracted cleanly afterwards.",
+    psychCheck: {
+      execution: "Disciplined. Waited through the veto. Accepted recalibrated coordinates.",
+      emotion: "Initial urge to enter before news was present, but protocol was obeyed. No chart watching after execution. Confidence increased."
+    }
+  },
+  {
+    day: 3,
+    date: "2026-05-13",
+    dayLabel: "Wed, 13 May",
+    startBalance: 101.20,
+    endBalance: 101.20,
+    rTotalDay: 0.0,
+    sessionStart: "08:00",
+    sessionEnd: "10:00",
+    strikes: [
+      {
+        id: "d3-s1",
+        time: "09:10:00",
+        pair: "GBP/USD",
+        direction: "NONE",
+        lot: 0.01,
+        status: "VETOED",
+        rejectionEngine: "ALPHA",
+        rejectionReason: "M5 ADX passed (31.64) but structure failed. M15 directional bias unclear, toxic wicks (>30%), buyer/seller deadlock.",
+        tp: 0,
+        sl: 0,
+        resultAmount: 0,
+        rEarned: 0
+      },
+      {
+        id: "d3-s2",
+        time: "09:40:00",
+        pair: "GBP/USD",
+        direction: "NONE",
+        lot: 0.01,
+        status: "VETOED",
+        rejectionEngine: "ALPHA",
+        rejectionReason: "M5 ADX dropped to 26.33. M15 ADX dying at 18.07. Doji forest conditions. Approaching Euro GDP volatility at 10:00 WAT.",
+        tp: 0,
+        sl: 0,
+        resultAmount: 0,
+        rEarned: 0
+      }
+    ],
+    summary: "Foggy conditions. No clean environment = No strike authorized. Alpha maintained hard gatekeep.",
+    psychCheck: {
+      execution: "Disciplined. No revenge trading. Respected the 'no strike' verdict.",
+      emotion: "Slight urge to 'find something' after yesterday's win, but discipline over dopamine."
+    }
+  },
+  {
+    day: 4,
+    date: "2026-05-14",
+    dayLabel: "Thu, 14 May",
+    startBalance: 101.20,
+    endBalance: 103.60,
+    rTotalDay: 1.5,
+    sessionStart: "15:30",
+    sessionEnd: "17:30",
+    strikes: [
+      {
+        id: "d4-s1",
+        time: "15:50:00",
+        pair: "AUD/USD",
+        direction: "SELL",
+        lot: 0.01,
+        status: "VETOED",
+        rejectionEngine: "BETA",
+        rejectionReason: "L4 Candle Structure Veto. Weak-bodied corrective pullback was not exhausted. We do not sell into a live pullback.",
+        tp: 0,
+        sl: 0,
+        resultAmount: 0,
+        rEarned: 0
+      },
+      {
+        id: "d4-s2",
+        time: "16:00:02",
+        pair: "GBP/USD",
+        direction: "SELL",
+        lot: 0.01,
+        status: "TP HIT",
+        tp: 1.34597,
+        sl: 1.34997,
+        entryPrice: 1.34837,
+        exitPrice: 1.34597,
+        exitTime: "17:15:50",
+        resultAmount: 2.40,
+        rEarned: 1.5,
+        duration: "1h 15m 48s",
+        note: "Heavy slippage triggered Recalibration Protocol. Alpha re-anchored to reality. Beta confirmed structural defense."
+      }
+    ],
+    summary: "Superb execution on Cable after Aussie veto. Market honored coordinates with surgical precision.",
+    psychCheck: {
+      execution: "Elite discipline. Pivoted seamlessly, synchronized live entry, accepted recalibrated risk.",
+      emotion: "Calm. Respected the 'Set, Forget, and Extract' law completely."
+    }
+  },
+  {
+    day: 5,
+    date: "2026-05-15",
+    dayLabel: "Fri, 15 May",
+    startBalance: 103.60,
+    endBalance: 103.59,
+    rTotalDay: -0.02,
+    sessionStart: "16:00",
+    sessionEnd: "17:30",
+    strikes: [
+      {
+        id: "d5-s1",
+        time: "17:10:00",
+        pair: "EUR/GBP",
+        direction: "BUY",
+        lot: 0.01,
+        status: "VETOED",
+        rejectionEngine: "ALPHA",
+        rejectionReason: "L8 Wick Exhaustion. Buyers hitting major resistance wall. We do not buy into a live wick wall on a Friday afternoon.",
+        tp: 0,
+        sl: 0,
+        resultAmount: 0,
+        rEarned: 0
+      },
+      {
+        id: "d5-s2",
+        time: "17:15:01",
+        pair: "EUR/GBP",
+        direction: "BUY",
+        lot: 0.01,
+        status: "SCRATCH",
+        tp: 0.87331,
+        sl: 0.87206,
+        entryPrice: 0.87256,
+        exitPrice: 0.87255, // effectively breakeven
+        exitTime: "20:59:26",
+        resultAmount: -0.01,
+        rEarned: -0.02,
+        duration: "3h 44m 25s",
+        note: "Friday liquidity collapsed. 21:00 WAT Purge Protocol forced manual exit before weekend gap risk."
+      }
+    ],
+    summary: "Capital safe. Purge protocol saved potential slippage or gap risk over the weekend.",
+    psychCheck: {
+      execution: "Elite discipline. Manually killed trade per Purge rules. Absolute focus on preservation.",
+      emotion: "Curious but highly controlled. Did not widen stops or force emotional trades."
+    }
+  },
+  {
+    day: 6,
+    date: "2026-05-18",
+    dayLabel: "Mon, 18 May",
+    startBalance: 103.59,
+    endBalance: 104.79,
+    rTotalDay: 1.5,
+    sessionStart: "07:30",
+    sessionEnd: "09:30",
+    strikes: [
+      {
+        id: "d6-s1",
+        time: "07:40:01",
+        pair: "GBP/USD",
+        direction: "BUY",
+        lot: 0.01,
+        status: "TP HIT",
+        tp: 1.33593,
+        sl: 1.33393,
+        entryPrice: 1.33473,
+        exitPrice: 1.33593,
+        exitTime: "09:25:12",
+        resultAmount: 1.20,
+        rEarned: 1.5,
+        duration: "1h 45m 11s",
+        note: "Heavy bullish momentum caused +3.7 pip slippage. Re-Synchronization Protocol successfully deployed by Alpha."
+      }
+    ],
+    summary: "Clean Monday expansion. Dynamic calibration allowed surgical TP hit before reversal.",
+    psychCheck: {
+      execution: "Superb execution. Instantly synchronized, let the market work.",
+      emotion: "Urge to watch live candles. Checked repeatedly during vertical rally, but stayed inside protocol. No early exit."
+    }
+  },
+  {
+    day: 7,
+    date: "2026-05-19",
+    dayLabel: "Tue, 19 May",
+    startBalance: 104.79,
+    endBalance: 105.99,
+    rTotalDay: 1.5,
+    sessionStart: "08:00",
+    sessionEnd: "10:30",
+    strikes: [
+      {
+        id: "d7-s1",
+        time: "08:25:00",
+        pair: "GBP/USD",
+        direction: "SELL",
+        lot: 0.01,
+        status: "VETOED",
+        rejectionEngine: "ALPHA",
+        rejectionReason: "L1 Directional Lock Failure. M5 bearish momentum was active, but macro M15 remained aggressively bullish post-UK news.",
+        tp: 0,
+        sl: 0,
+        resultAmount: 0,
+        rEarned: 0
+      },
+      {
+        id: "d7-s2",
+        time: "09:45:01",
+        pair: "AUD/USD",
+        direction: "SELL",
+        lot: 0.01,
+        status: "TP HIT",
+        tp: 0.71069,
+        sl: 0.71269,
+        entryPrice: 0.71189,
+        exitPrice: 0.71069,
+        exitTime: "14:20:53",
+        resultAmount: 1.20,
+        rEarned: 1.5,
+        duration: "4h 35m 52s",
+        note: "Bearish cascade confirmed by ChatGPT structural observation. TP hit cleanly above 0.71000 century magnet."
+      }
+    ],
+    summary: "Milestone 1 shattered! Beautiful rotation from Cable veto to Aussie live extraction.",
+    psychCheck: {
+      execution: "Surgical. Dispatched coordinates, respected Face-Down Protocol, trusted the math.",
+      emotion: "Extremely calm. Mild curiosity during long trade duration, but zero panic-closing."
+    }
+  },
+  {
+    day: 8,
+    date: "2026-05-20",
+    dayLabel: "Wed, 20 May",
+    startBalance: 105.99,
+    endBalance: 105.99,
+    rTotalDay: 0.0,
+    sessionStart: "08:00",
+    sessionEnd: "10:00",
+    strikes: [],
+    summary: "Scan completed. No monitored pairs met ADX/ATR/Structure thresholds. Entire environment vetoed.",
+    psychCheck: {
+      execution: "Disciplined. No screenshots escalated because market never earned clearance. System cold and silent.",
+      emotion: "Slight urge to search harder, but discipline overruled boredom. Preservation day fully accepted."
+    }
+  }
+];
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [journal, setJournal] = useState(() => {
+    const saved = localStorage.getItem('fx_sniper_journal');
+    return saved ? JSON.parse(saved) : initialJournal;
+  });
+  
+  // Custom logo upload
+  const [logo, setLogo] = useState(() => {
+    return localStorage.getItem('fx_sniper_logo') || null;
+  });
+
+  // Goal tracker state
+  const [targetGoal, setTargetGoal] = useState(() => {
+    return localStorage.getItem('fx_sniper_goal') || "50 Surgical Extractions";
+  });
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [tempGoal, setTempGoal] = useState(targetGoal);
+
+  // Gemini API client-side setup
+  const [apiKey, setApiKey] = useState(() => {
+    return localStorage.getItem('fx_sniper_gemini_key') || "";
+  });
+  const [aiInput, setAiInput] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [showKeyField, setShowKeyField] = useState(false);
+
+  // Form states for Logging Trade (Day 9+)
+  const [formPair, setFormPair] = useState("GBP/USD");
+  const [formDirection, setFormDirection] = useState("BUY");
+  const [formStatus, setFormStatus] = useState("TP HIT"); // TP HIT, SL HIT, SCRATCH, VETOED
+  const [formTime, setFormTime] = useState("08:30:00");
+  const [formEntry, setFormEntry] = useState("");
+  const [formExit, setFormExit] = useState("");
+  const [formSl, setFormSl] = useState("");
+  const [formTp, setFormTp] = useState("");
+  const [formResultAmount, setFormResultAmount] = useState("");
+  const [formDuration, setFormDuration] = useState("");
+  const [formRejectionReason, setFormRejectionReason] = useState("");
+  const [formRejectionEngine, setFormRejectionEngine] = useState("ALPHA");
+  const [formEmotion, setFormEmotion] = useState("Calm");
+  const [formExecutionNotes, setFormExecutionNotes] = useState("");
+  const [formDayNumber, setFormDayNumber] = useState(9);
+  const [formDate, setFormDate] = useState("2026-05-21");
+
+  // Notification Banner State
+  const [bannerMsg, setBannerMsg] = useState("Welcome back CXO. Current Active Date: Mon, May 11, 2026 — Phase 0 Active. 🎯");
+
+  // Save to local storage
+  useEffect(() => {
+    localStorage.setItem('fx_sniper_journal', JSON.stringify(journal));
+  }, [journal]);
+
+  useEffect(() => {
+    localStorage.setItem('fx_sniper_gemini_key', apiKey);
+  }, [apiKey]);
+
+  // Handle Logo Upload
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogo(reader.result);
+        localStorage.setItem('fx_sniper_logo', reader.result);
+        playSound('success');
+        setBannerMsg("FX Sniper Kitchen II Logo updated successfully! 🏛️");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Clear logo
+  const clearLogo = () => {
+    setLogo(null);
+    localStorage.removeItem('fx_sniper_logo');
+    playSound('veto');
+  };
+
+  // Sound triggering navigation helper
+  const switchTab = (tab) => {
+    playSound('click');
+    setActiveTab(tab);
+  };
+
+  // Statistics Computations
+  const totalStrikes = journal.flatMap(j => j.strikes || []);
+  const liveTrades = totalStrikes.filter(s => s.status !== 'VETOED');
+  const wins = liveTrades.filter(t => t.status === 'TP HIT').length;
+  const losses = liveTrades.filter(t => t.status === 'SL HIT').length;
+  const scratches = liveTrades.filter(t => t.status === 'SCRATCH').length;
+  const vetoes = totalStrikes.filter(s => s.status === 'VETOED').length;
+
+  const totalTradesCount = liveTrades.length;
+  const winRate = totalTradesCount > 0 ? ((wins / totalTradesCount) * 100).toFixed(1) : "0.0";
+  
+  // R-Total calculator based on actual values
+  const rTotalAccumulated = journal.reduce((acc, curr) => acc + (curr.rTotalDay || 0), 0);
+  const currentBalance = journal[journal.length - 1]?.endBalance || 100.00;
+  
+  // Calculated streaks
+  let currentStreak = 0;
+  let maxWinStreak = 0;
+  let tempStreak = 0;
+  liveTrades.forEach(t => {
+    if (t.status === 'TP HIT') {
+      tempStreak++;
+      if (tempStreak > maxWinStreak) maxWinStreak = tempStreak;
+    } else if (t.status === 'SL HIT') {
+      tempStreak = 0;
+    }
+  });
+  currentStreak = tempStreak;
+
+  // Add customized/simulated feedback logic for Local AI Coach
+  const runLocalAiCoach = () => {
+    let feedback = "";
+    if (totalTradesCount === 0) {
+      return "No active trades logged yet. Remember our motto: ONE SHOT, ONE KILL! Scan cleanly, audit meticulously, lock Beta protection, and strike at Min 10.";
+    }
+
+    const avgDurationStr = "Average Extraction: ~1 Hour";
+    const adxAudit = "ADX is being respected nicely with high conviction trends.";
+    const mainRuleReminders = "Remember: Never hold past Friday 21:00 WAT. Your 1-Loss and 1-Win rules are absolute.";
+
+    // Custom analysis points
+    let insights = [];
+    if (winRate > 70) {
+      insights.push("🔥 Exceptional execution efficiency! Your current win rate is sitting in elite institutional brackets.");
+    }
+    if (vetoes > 0) {
+      insights.push(`🛡️ Shield Efficiency: Beta and Alpha have blocked ${vetoes} risky setups. Your willingness to stand down saved major capital.`);
+    }
+    const hasSlippageNotes = liveTrades.some(t => t.note && t.note.toLowerCase().includes('slippage'));
+    if (hasSlippageNotes) {
+      insights.push("⚙️ Recalibration Alert: Slippage has been experienced. Alpha’s Dynamic Re-Synchronization handles this flawlessly, but flag Beta for structural validation.");
+    }
+    const checkLiveUrge = journal.some(j => j.psychCheck?.emotion?.toLowerCase().includes('candle') || j.psychCheck?.emotion?.toLowerCase().includes('watch'));
+    if (checkLiveUrge) {
+      insights.push("🧠 Cognitive Bias Warning: The urge to watch live candles was recorded. Remember: Watching the candles does not move the price. Close the platform immediately after the strike.");
+    }
+
+    feedback = `--- FX SNIPER AUTOMATED JOURNAL AUDIT ---\n\n`;
+    feedback += `📊 PERFORMANCE ANALYSIS:\n`;
+    feedback += `- Elite Win Rate: ${winRate}%\n`;
+    feedback += `- Surgical Strikes: ${totalTradesCount} executed, ${vetoes} successfully avoided.\n`;
+    feedback += `- Net Extraction Gain: +${rTotalAccumulated.toFixed(2)}R\n\n`;
+    feedback += `💡 COACH INSIGHTS:\n`;
+    insights.forEach(insight => {
+      feedback += `${insight}\n`;
+    });
+    feedback += `\n🎯 NEXT SESSION FOCUS:\n`;
+    feedback += `1. Blind Execution Timing: Hit the button exactly at Min 10 if green lit. Do not look for better pips.\n`;
+    feedback += `2. Face-Down Protocol: After confirming coordinates, close both broker and tradingview. Relinquish the clock.\n`;
+    feedback += `3. Capital Preserved is Progress: Celebrate zero-strike days like Wed 20 May. No trade is a winning trade.`;
+
+    return feedback;
+  };
+
+  // Trigger Gemini API
+  const handleAiAnalysis = async () => {
+    playSound('click');
+    setAiLoading(true);
+    setAiResponse("");
+
+    // Package entire journal state as background knowledge
+    const journalSnapshotStr = JSON.stringify(journal, null, 2);
+    const systemPrompt = `You are the ultimate AI Trading Coach for "THE FX SNIPER KITCHEN II". Your personality is high-caliber, institutional, tactical, precise, and supportive.
+Your core rules to judge performance are:
+- Target R-ratio is always 1.5R.
+- Strict 1-trade limit per session. If hit, the kitchen closes.
+- One Win Rule and One Loss Rule.
+- Temporal News Veto Protocol (Red impact: T-5 to T+60m pause, Orange impact: T-2 to T+30m pause).
+- Structural Supremacy: No manual exits except Friday 21:00 WAT Purge.
+
+You must analyze the user's trading journal history, spot psychological traps (like looking at candles), praise rigorous vetoes (capital preservation), suggest optimizations, and formulate a custom "Next Session Focus" block. Ensure to output modern markdown formatting with high-conviction emojis.`;
+
+    const userQuery = aiInput.trim() 
+      ? `User question: "${aiInput}"\n\nAnalyze this journal snapshot: \n${journalSnapshotStr}`
+      : `Provide a complete analytical deep dive, mental checkup, discipline audit, and automated Next Session Focus recommendation based on this trading journal snapshot: \n${journalSnapshotStr}`;
+
+    if (!apiKey) {
+      // Return local AI analysis if no API key is specified
+      setTimeout(() => {
+        setAiResponse(runLocalAiCoach() + "\n\n*(Note: To connect to live Gemini 2.5 Intelligence, input your Gemini API Key in the top right Settings toggle)*");
+        setAiLoading(false);
+        playSound('success');
+      }, 1000);
+      return;
+    }
+
+    try {
+      // Gemini API call using exponential backoff
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [{ parts: [{ text: userQuery }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] }
+      };
+
+      let response;
+      let delay = 1000;
+      for (let attempt = 1; attempt <= 5; attempt++) {
+        try {
+          response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (response.ok) break;
+        } catch (err) {
+          if (attempt === 5) throw err;
+        }
+        await new Promise(res => setTimeout(res, delay));
+        delay *= 2; // Exponential backoff
+      }
+
+      if (!response || !response.ok) {
+        throw new Error(`API returned status ${response?.status || 'Error'}`);
+      }
+
+      const data = await response.json();
+      const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated. Double check API key status.";
+      setAiResponse(generatedText);
+      playSound('success');
+    } catch (err) {
+      console.error(err);
+      setAiResponse(`⚠️ Failed to communicate with live Gemini. Fallback Local AI Audit output:\n\n${runLocalAiCoach()}`);
+      playSound('warning');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Add custom trade log handler (Day 9+)
+  const handleAddTrade = (e) => {
+    e.preventDefault();
+    playSound('click');
+
+    const formattedDayLabel = `Day ${formDayNumber} — ${new Date(formDate).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}`;
+    
+    // Construct strike object
+    const newStrike = {
+      id: `custom-strike-${Date.now()}`,
+      time: formTime,
+      pair: formPair,
+      direction: formDirection,
+      lot: 0.01,
+      status: formStatus,
+      tp: parseFloat(formTp) || 0,
+      sl: parseFloat(formSl) || 0,
+      entryPrice: parseFloat(formEntry) || 0,
+      exitPrice: parseFloat(formExit) || 0,
+      exitTime: formTime,
+      resultAmount: parseFloat(formResultAmount) || 0,
+      rEarned: formStatus === 'TP HIT' ? 1.5 : formStatus === 'SL HIT' ? -1.0 : formStatus === 'SCRATCH' ? -0.02 : 0,
+      duration: formDuration || "N/A",
+      rejectionEngine: formRejectionEngine,
+      rejectionReason: formRejectionReason,
+      note: formExecutionNotes
+    };
+
+    // Construct day record
+    const existingDayIdx = journal.findIndex(j => j.day === Number(formDayNumber));
+    let updatedJournal = [...journal];
+
+    const currentDayStartBalance = existingDayIdx !== -1 
+      ? journal[existingDayIdx].startBalance 
+      : (journal[journal.length - 1]?.endBalance || 100.00);
+
+    const calcProfit = newStrike.resultAmount;
+    const currentDayEndBalance = currentDayStartBalance + calcProfit;
+
+    if (existingDayIdx !== -1) {
+      // Append strike to existing day
+      updatedJournal[existingDayIdx].strikes.push(newStrike);
+      updatedJournal[existingDayIdx].endBalance = parseFloat((updatedJournal[existingDayIdx].endBalance + calcProfit).toFixed(2));
+      updatedJournal[existingDayIdx].rTotalDay = parseFloat((updatedJournal[existingDayIdx].rTotalDay + newStrike.rEarned).toFixed(2));
+      if (formExecutionNotes) updatedJournal[existingDayIdx].summary += ` | ${formExecutionNotes}`;
+    } else {
+      // Construct brand new day
+      const newDayRecord = {
+        day: Number(formDayNumber),
+        date: formDate,
+        dayLabel: formattedDayLabel,
+        startBalance: parseFloat(currentDayStartBalance.toFixed(2)),
+        endBalance: parseFloat(currentDayEndBalance.toFixed(2)),
+        rTotalDay: newStrike.rEarned,
+        sessionStart: "08:00",
+        sessionEnd: "10:00",
+        strikes: [newStrike],
+        summary: formStatus === 'VETOED' ? `Strike vetoed: ${formRejectionReason}` : `Executed ${formPair} strike. Result: ${formStatus}.`,
+        psychCheck: {
+          execution: "Custom logged trade entry.",
+          emotion: formEmotion
+        }
+      };
+      updatedJournal.push(newDayRecord);
+    }
+
+    setJournal(updatedJournal);
+    setBannerMsg(`Day ${formDayNumber} ${formPair} entry recorded successfully! 🎯`);
+    
+    // Reset/increment forms
+    setFormDayNumber(prev => prev + 1);
+    setFormEntry("");
+    setFormExit("");
+    setFormSl("");
+    setFormTp("");
+    setFormResultAmount("");
+    setFormRejectionReason("");
+    setFormExecutionNotes("");
+
+    // Play tactile sound
+    if (formStatus === 'TP HIT') {
+      playSound('success');
+    } else if (formStatus === 'VETOED') {
+      playSound('veto');
+    } else {
+      playSound('warning');
+    }
+  };
+
+  // Export journal raw markdown structure
+  const exportToMarkdown = () => {
+    playSound('success');
+    let md = `# THE FX SNIPER KITCHEN II - EXPORTED JOURNAL\n`;
+    md += `Generated: ${new Date().toLocaleString()}\n`;
+    md += `Current Net R-Total: +${rTotalAccumulated.toFixed(2)}R\n`;
+    md += `Account Balance: $${currentBalance.toFixed(2)}\n`;
+    md += `Win Rate: ${winRate}%\n\n`;
+    
+    journal.forEach(j => {
+      md += `----------------------------------------\n`;
+      md += `${j.dayLabel}\n`;
+      md += `----------------------------------------\n`;
+      md += `START BALANCE: $${j.startBalance.toFixed(2)}\n`;
+      md += `END BALANCE: $${j.endBalance.toFixed(2)}\n`;
+      md += `R-TOTAL FOR DAY: ${j.rTotalDay >= 0 ? '+' : ''}${j.rTotalDay}R\n\n`;
+      
+      if (j.strikes.length === 0) {
+        md += `No Valid Strike Executed 🚫 (Environment Vetoed)\n`;
+      } else {
+        j.strikes.forEach((s, idx) => {
+          md += `Strike ${idx + 1} (${s.status}) ${s.status === 'VETOED' ? '🚫' : '🎯'}\n`;
+          md += `${s.pair} | ${s.direction} | Lot: ${s.lot}\n`;
+          if (s.status === 'VETOED') {
+            md += `Veto Engine: ${s.rejectionEngine}\n`;
+            md += `Reason: ${s.rejectionReason}\n`;
+          } else {
+            md += `Entry Price: ${s.entryPrice} | Exit Price: ${s.exitPrice}\n`;
+            md += `SL: ${s.sl} | TP: ${s.tp}\n`;
+            md += `Profit/Loss: $${s.resultAmount} (${s.rEarned}R)\n`;
+          }
+          md += `\n`;
+        });
+      }
+      md += `Summary: ${j.summary}\n`;
+      md += `Psych-Check Execution: ${j.psychCheck?.execution || 'N/A'}\n`;
+      md += `Psych-Check Emotion: ${j.psychCheck?.emotion || 'N/A'}\n\n`;
+    });
+
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fx_sniper_kitchen_ii_journal.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#080c14] text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white">
+      
+      {/* GLOWING SYSTEM TICKER HEADER */}
+      <div className="bg-gradient-to-r from-emerald-950/80 via-slate-900 to-rose-950/80 border-b border-slate-800 py-2.5 px-4 text-xs tracking-wider flex flex-wrap justify-between items-center gap-2">
+        <div className="flex items-center gap-2 animate-pulse text-emerald-400 font-mono">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+          ACTIVE STATUS: OPERATIONAL
+        </div>
+        <div className="font-serif italic text-slate-300 text-center flex-1 max-w-lg truncate">
+          "Ponder the path of thy feet, and let all thy ways be established." — Proverbs 4:26 (KJV) 📖⚖️
+        </div>
+        <div className="text-slate-400 font-mono text-right">
+          SYSTEM CLOCK (WAT): <span className="text-white font-bold">20:05</span> | ACTIVE DATE: <span className="text-amber-400">Mon, May 11, 2026</span>
+        </div>
+      </div>
+
+      {/* CORE HERO BANNER BRAND */}
+      <header className="bg-slate-900/40 backdrop-blur-md border-b border-slate-800/80 px-4 md:px-8 py-5 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="flex items-center gap-4">
+          {/* Logo Upload Display Zone */}
+          <div className="relative group">
+            {logo ? (
+              <div className="relative">
+                <img 
+                  src={logo} 
+                  alt="FX Sniper Logo" 
+                  className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-xl border-2 border-emerald-500/50 shadow-lg shadow-emerald-500/10"
+                />
+                <button 
+                  onClick={clearLogo}
+                  className="absolute -top-2 -right-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full p-1 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  title="Remove Logo"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-16 h-16 md:w-20 md:h-20 border-2 border-dashed border-slate-700 hover:border-emerald-500 rounded-xl cursor-pointer bg-slate-800/50 transition-colors">
+                <span className="text-[10px] text-slate-400 text-center font-bold px-1">UPLOAD LOGO</span>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handleLogoUpload}
+                />
+              </label>
+            )}
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-2xl md:text-3xl font-black tracking-tighter bg-gradient-to-r from-emerald-400 via-teal-300 to-rose-400 bg-clip-text text-transparent uppercase">
+                THE FX SNIPER KITCHEN II
+              </h1>
+              <span className="px-2 py-0.5 text-[10px] font-mono tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full font-bold">
+                V2.5
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 font-mono mt-1">
+              Hedge-Fund Aesthetic Surgical Analytics Dashboard • Motto: <span className="text-rose-400 font-bold">ONE SHOT, ONE KILL! 💥</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Goal Tracker & Global Progress Card */}
+        <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl flex items-center gap-4 max-w-sm w-full shadow-inner">
+          <div className="flex-1">
+            <div className="flex justify-between items-center text-xs font-mono mb-1">
+              <span className="text-slate-400">EMPIRE ROADMAP:</span>
+              <button 
+                onClick={() => {
+                  if (isEditingGoal) {
+                    setTargetGoal(tempGoal);
+                    localStorage.setItem('fx_sniper_goal', tempGoal);
+                    setIsEditingGoal(false);
+                    playSound('success');
+                  } else {
+                    setTempGoal(targetGoal);
+                    setIsEditingGoal(true);
+                    playSound('click');
+                  }
+                }}
+                className="text-emerald-400 hover:underline hover:text-emerald-300 text-[10px]"
+              >
+                {isEditingGoal ? "💾 SAVE" : "✏️ EDIT"}
+              </button>
+            </div>
+            {isEditingGoal ? (
+              <input 
+                type="text" 
+                value={tempGoal} 
+                onChange={(e) => setTempGoal(e.target.value)}
+                className="bg-slate-900 border border-slate-700 text-xs px-2 py-1 rounded text-white font-mono w-full"
+              />
+            ) : (
+              <div className="text-xs font-bold text-amber-400 truncate">{targetGoal}</div>
+            )}
+            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500"
+                style={{ width: `${(totalTradesCount / 50) * 100}%` }}
+              ></div>
+            </div>
+            <div className="flex justify-between text-[10px] font-mono mt-1 text-slate-500">
+              <span>Day 8 Milestone</span>
+              <span>{totalTradesCount}/50 Extractions</span>
+            </div>
+          </div>
+          <div className="text-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg">
+            <div className="text-lg font-black font-mono leading-none">+{rTotalAccumulated.toFixed(2)}R</div>
+            <span className="text-[9px] font-mono tracking-wider">NET GAIN</span>
+          </div>
+        </div>
+      </header>
+
+      {/* TACTICAL FLOATING NOTIFICATION BANNER */}
+      {bannerMsg && (
+        <div className="bg-emerald-950/20 border-b border-emerald-900/30 px-4 py-2 text-center text-xs font-mono text-emerald-400 flex items-center justify-center gap-2">
+          <span>📡 SYSTEM AUDIT:</span>
+          <span>{bannerMsg}</span>
+          <button 
+            onClick={() => setBannerMsg("")} 
+            className="text-slate-500 hover:text-slate-300 ml-4 font-bold text-[10px]"
+          >
+            DISMISS
+          </button>
+        </div>
+      )}
+
+      {/* NAVIGATION TABS */}
+      <nav className="bg-slate-950/80 border-b border-slate-800 p-2 flex flex-wrap gap-1 sticky top-0 z-40 backdrop-blur-md">
+        {[
+          { id: 'overview', label: '📊 Overview', desc: 'Performance Stats' },
+          { id: 'journal', label: '📖 Trade Journal', desc: 'Strikes & Audits' },
+          { id: 'analytics', label: '📈 Visual Analytics', desc: 'Equity & Trends' },
+          { id: 'coach', label: '🤖 AI Coach', desc: 'Behavior Audit' },
+          { id: 'calendar', label: '📅 May 2026 Calendar', desc: 'P&L Tracking' },
+          { id: 'rules', label: '⚖️ Sniper Rules', desc: 'Operational Laws' }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => switchTab(tab.id)}
+            className={`flex-1 min-w-[130px] md:flex-initial px-4 py-2 rounded-lg text-xs font-mono font-bold tracking-wider transition-all duration-200 ${
+              activeTab === tab.id 
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/15 border border-emerald-500/30' 
+                : 'text-slate-400 hover:text-white hover:bg-slate-900 border border-transparent'
+            }`}
+          >
+            <div>{tab.label}</div>
+            <div className="text-[9px] font-normal text-slate-500 hidden md:block">{tab.desc}</div>
+          </button>
+        ))}
+      </nav>
+
+      {/* MAIN CONTAINER */}
+      <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto space-y-6">
+
+        {/* TAB 1: OVERVIEW */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6 animate-fade-in">
+            
+            {/* TOP STATISTICS GRID */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              
+              <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition-all"></div>
+                <div className="text-xs text-slate-500 font-mono tracking-widest uppercase">CURRENT BALANCE</div>
+                <div className="text-3xl font-black font-mono text-emerald-400 mt-2">
+                  ${currentBalance.toFixed(2)}
+                </div>
+                <div className="text-[10px] text-slate-500 font-mono mt-1 flex justify-between">
+                  <span>Start: $100.00</span>
+                  <span className="text-emerald-500">+{((currentBalance - 100) / 100 * 100).toFixed(2)}%</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-teal-500/5 rounded-full blur-xl group-hover:bg-teal-500/10 transition-all"></div>
+                <div className="text-xs text-slate-500 font-mono tracking-widest uppercase">CONVICTION WIN RATE</div>
+                <div className="text-3xl font-black font-mono text-teal-300 mt-2">
+                  {winRate}%
+                </div>
+                <div className="text-[10px] text-slate-500 font-mono mt-1">
+                  {wins} W | {losses} L | {scratches} Scratch
+                </div>
+              </div>
+
+              <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-rose-500/5 rounded-full blur-xl group-hover:bg-rose-500/10 transition-all"></div>
+                <div className="text-xs text-slate-500 font-mono tracking-widest uppercase">TACTICAL SHIELD</div>
+                <div className="text-3xl font-black font-mono text-rose-400 mt-2">
+                  {vetoes}
+                </div>
+                <div className="text-[10px] text-slate-500 font-mono mt-1">
+                  Alpha & Beta Capital Vetos
+                </div>
+              </div>
+
+              <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/5 rounded-full blur-xl group-hover:bg-amber-500/10 transition-all"></div>
+                <div className="text-xs text-slate-500 font-mono tracking-widest uppercase">STREAK TRACKER</div>
+                <div className="text-3xl font-black font-mono text-amber-400 mt-2">
+                  {currentStreak} <span className="text-xs font-normal text-slate-500">current</span>
+                </div>
+                <div className="text-[10px] text-slate-500 font-mono mt-1">
+                  Max consecutive wins: <span className="text-emerald-400 font-bold">{maxWinStreak}</span>
+                </div>
+              </div>
+
+            </div>
+
+            {/* PERFORMANCE GAUGES & SUMMARY */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* Tactical Session Window Reminder */}
+              <div className="bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 rounded-xl p-5 shadow-lg space-y-4">
+                <h3 className="text-xs font-mono font-bold tracking-widest text-slate-400 border-b border-slate-800 pb-2">
+                  ⏰ ACTIVE TRADING WINDOWS (WAT)
+                </h3>
+                <div className="space-y-2 font-mono text-xs">
+                  {[
+                    { day: "MON", hours: "07:30 - 09:30", color: "text-emerald-400" },
+                    { day: "TUE", hours: "08:00 - 10:30", color: "text-teal-400" },
+                    { day: "WED", hours: "08:00 - 10:00", color: "text-amber-400" },
+                    { day: "THU", hours: "15:30 - 17:30", color: "text-rose-400" },
+                    { day: "FRI", hours: "16:00 - 17:30", color: "text-blue-400" }
+                  ].map((w, idx) => (
+                    <div key={idx} className="flex justify-between items-center py-1 border-b border-slate-900">
+                      <span className="font-bold text-slate-300">{w.day}</span>
+                      <span className={`${w.color} font-bold`}>{w.hours}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-rose-950/20 border border-rose-900/30 p-3 rounded-lg text-[10px] font-mono text-rose-300 mt-2 leading-relaxed">
+                  ⚠️ <span className="font-bold">1-Loss / 1-Win limit</span> strictly enforced. The kitchen shuts down instantly upon either reaching. No exception.
+                </div>
+              </div>
+
+              {/* Asset Allocation Weight */}
+              <div className="bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 rounded-xl p-5 shadow-lg flex flex-col justify-between">
+                <div>
+                  <h3 className="text-xs font-mono font-bold tracking-widest text-slate-400 border-b border-slate-800 pb-2">
+                    🌍 APPROVED KITCHEN ASSETS
+                  </h3>
+                  <div className="space-y-3 mt-4">
+                    {[
+                      { pair: "GBP/USD", nick: "The Cable 🇬🇧🇺🇸", weight: "75%", count: liveTrades.filter(t => t.pair === 'GBP/USD').length },
+                      { pair: "AUD/USD", nick: "The Aussie 🇦🇺🇺🇸", weight: "20%", count: liveTrades.filter(t => t.pair === 'AUD/USD').length },
+                      { pair: "EUR/GBP", nick: "The Chunnel 🇪🇺🇬🇧", weight: "5%", count: liveTrades.filter(t => t.pair === 'EUR/GBP').length }
+                    ].map((asset, i) => (
+                      <div key={i} className="space-y-1">
+                        <div className="flex justify-between text-xs font-mono">
+                          <span className="font-bold text-white">{asset.pair} ({asset.nick})</span>
+                          <span className="text-emerald-400 font-bold">{asset.count} strikes</span>
+                        </div>
+                        <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+                          <div 
+                            className="bg-emerald-500 h-full rounded-full" 
+                            style={{ width: asset.pair === 'GBP/USD' ? '70%' : asset.pair === 'AUD/USD' ? '20%' : '10%' }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-500 font-mono leading-snug mt-4">
+                  These 3 assets represent the maximum correlation perimeter. No other assets are escalated to the strike engine.
+                </p>
+              </div>
+
+              {/* Quick AI Advisor Recommendation */}
+              <div className="bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 rounded-xl p-5 shadow-lg flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute -right-6 -bottom-6 text-slate-900 font-black text-8xl pointer-events-none select-none">
+                  🤖
+                </div>
+                <div className="z-10">
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <h3 className="text-xs font-mono font-bold tracking-widest text-slate-400">
+                      🤖 AI ADVISOR INSTANT FEEDBACK
+                    </h3>
+                    <span className="animate-pulse w-2 h-2 rounded-full bg-emerald-500"></span>
+                  </div>
+                  <div className="mt-3 font-mono text-[11px] text-slate-300 leading-relaxed space-y-2">
+                    <p className="font-bold text-amber-300">"Surgical efficiency is exceptionally high."</p>
+                    <p>
+                      Your mental state notes reveal standard execution discipline. Let the market decide at 1.5R.
+                    </p>
+                    <p className="text-slate-400">
+                      Avoid checking charts during dynamic re-synchronization. Trust the Alpha algorithm entirely.
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => switchTab('coach')} 
+                  className="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-white font-mono text-xs py-2 rounded-lg border border-slate-700 transition"
+                >
+                  RUN COMPLETE BEHAVIOR AUDIT
+                </button>
+              </div>
+
+            </div>
+
+            {/* LIVE SYSTEM STATUS LOG SUMMARY */}
+            <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                <h3 className="text-sm font-mono font-bold tracking-widest text-slate-200">
+                  📊 SYSTEM ENGINE RUNNING AUDITS
+                </h3>
+                <span className="text-xs text-slate-400 font-mono">Last updated today</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="bg-slate-950/80 p-3.5 border border-slate-800 rounded-lg">
+                  <div className="text-xs text-slate-500 font-mono">ALPHA MANDATE L1</div>
+                  <div className="text-sm font-bold mt-1 text-slate-300">Trend Strength Check (ADX)</div>
+                  <p className="text-[10px] text-slate-500 font-mono mt-1">M5 ADX &gt; 25.0 required for strike vector validation.</p>
+                </div>
+                <div className="bg-slate-950/80 p-3.5 border border-slate-800 rounded-lg">
+                  <div className="text-xs text-slate-500 font-mono">BETA MANDATE L3</div>
+                  <div className="text-sm font-bold mt-1 text-slate-300">Volatility Check (ATR)</div>
+                  <p className="text-[10px] text-slate-500 font-mono mt-1">Threshold &gt; 0.00028 mandatory. Block entries during low energy.</p>
+                </div>
+                <div className="bg-slate-950/80 p-3.5 border border-slate-800 rounded-lg">
+                  <div className="text-xs text-slate-500 font-mono">PURGE PROTOCOL</div>
+                  <div className="text-sm font-bold mt-1 text-slate-300">Weekend Gap Defense</div>
+                  <p className="text-[10px] text-slate-500 font-mono mt-1">Manual exit forced every Friday at exactly 21:00 WAT.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 2: TRADE JOURNAL */}
+        {activeTab === 'journal' && (
+          <div className="space-y-6 animate-fade-in">
+            
+            {/* JOURNAL FILTER & ACTIONS */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-900/40 border border-slate-800 p-4 rounded-xl">
+              <div>
+                <h2 className="text-lg font-black tracking-tight text-white font-mono">
+                  📓 THE SURGICAL EXTRACTION LEDGER
+                </h2>
+                <p className="text-xs text-slate-400 font-mono mt-1">
+                  Day 1 to Present session tracking list. Use the exporter to save.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={exportToMarkdown}
+                  className="bg-slate-800 hover:bg-slate-700 text-white font-mono text-xs px-4 py-2 rounded-lg border border-slate-700 flex items-center gap-2 transition"
+                >
+                  📥 EXPORT JOURNAL (MD)
+                </button>
+              </div>
+            </div>
+
+            {/* WRITE NEW TRADE SYSTEM (Day 9+) */}
+            <details className="bg-slate-900/30 border border-slate-800 rounded-xl overflow-hidden group">
+              <summary className="cursor-pointer p-4 font-mono text-xs text-slate-300 font-bold hover:bg-slate-800/50 flex justify-between items-center transition">
+                <span>➕ RECORD NEW TRADE LOG (ADD CUSTOM SESSION OR NEXT DAY)</span>
+                <span className="text-[10px] text-emerald-400 font-mono underline group-open:hidden">CLICK TO EXPAND RECORD FORM</span>
+                <span className="text-[10px] text-rose-400 font-mono underline hidden group-open:inline">CLOSE RECORD FORM</span>
+              </summary>
+              <form onSubmit={handleAddTrade} className="p-5 border-t border-slate-800 bg-slate-950/60 space-y-4">
+                
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1">Session Day Number</label>
+                    <input 
+                      type="number" 
+                      value={formDayNumber}
+                      onChange={(e) => setFormDayNumber(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1">Session Date</label>
+                    <input 
+                      type="date" 
+                      value={formDate}
+                      onChange={(e) => setFormDate(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1">Instrument Pair</label>
+                    <select 
+                      value={formPair} 
+                      onChange={(e) => setFormPair(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                    >
+                      <option value="GBP/USD">GBP/USD (The Cable)</option>
+                      <option value="AUD/USD">AUD/USD (The Aussie)</option>
+                      <option value="EUR/GBP">EUR/GBP (The Chunnel)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1">Strike Direction</label>
+                    <select 
+                      value={formDirection} 
+                      onChange={(e) => setFormDirection(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                    >
+                      <option value="BUY">BUY 📈</option>
+                      <option value="SELL">SELL 📉</option>
+                      <option value="NONE">NONE (Vetoed)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1">Strike Verdict Status</label>
+                    <select 
+                      value={formStatus} 
+                      onChange={(e) => {
+                        setFormStatus(e.target.value);
+                        if (e.target.value === 'TP HIT') {
+                          setFormResultAmount("1.20");
+                        } else if (e.target.value === 'SL HIT') {
+                          setFormResultAmount("-0.80");
+                        } else if (e.target.value === 'SCRATCH') {
+                          setFormResultAmount("-0.01");
+                        } else {
+                          setFormResultAmount("0.00");
+                        }
+                      }}
+                      className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                    >
+                      <option value="TP HIT">TP HIT ✅</option>
+                      <option value="SL HIT">SL HIT 🛑</option>
+                      <option value="SCRATCH">SCRATCH / BREAKEVEN ⚖️</option>
+                      <option value="VETOED">VETOED BY ENGINE 🚫</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1">Entry Time (WAT)</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. 08:40:00" 
+                      value={formTime}
+                      onChange={(e) => setFormTime(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1">Entry Price Level</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. 1.35327" 
+                      value={formEntry}
+                      onChange={(e) => setFormEntry(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1">Exit Price Level</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. 1.35207" 
+                      value={formExit}
+                      onChange={(e) => setFormExit(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                    />
+                  </div>
+                </div>
+
+                {formStatus === 'VETOED' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-rose-950/20 p-4 border border-rose-900/30 rounded-lg">
+                    <div>
+                      <label className="block text-xs font-mono text-slate-400 mb-1">Veto Rejecting Engine</label>
+                      <select 
+                        value={formRejectionEngine} 
+                        onChange={(e) => setFormRejectionEngine(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                      >
+                        <option value="ALPHA">ALPHA ENGINE (Technical Confluence Veto)</option>
+                        <option value="BETA">BETA ENGINE (Shield Safety & News Veto)</option>
+                        <option value="CXO">CXO MANUAL (Self Discipline Veto)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono text-slate-400 mb-1">Detailed Rejection Reason</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. L9 DXY correlation, toxic M15 wicks, news proximity..." 
+                        value={formRejectionReason}
+                        onChange={(e) => setFormRejectionReason(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                        required={formStatus === 'VETOED'}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-900/50 p-4 border border-slate-800 rounded-lg">
+                    <div>
+                      <label className="block text-xs font-mono text-slate-400 mb-1">Stop Loss Level (SL)</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. 1.35407" 
+                        value={formSl}
+                        onChange={(e) => setFormSl(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono text-slate-400 mb-1">Take Profit Level (TP)</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. 1.35207" 
+                        value={formTp}
+                        onChange={(e) => setFormTp(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono text-slate-400 mb-1">Net Result Amount ($)</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. 1.20 or -0.80" 
+                        value={formResultAmount}
+                        onChange={(e) => setFormResultAmount(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono bg-slate-950 font-bold text-amber-400"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono text-slate-400 mb-1">Execution Duration</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. 5m 10s" 
+                        value={formDuration}
+                        onChange={(e) => setFormDuration(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1">Emotional & Psych Check</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Calm, no revenge scanning, controlled urge to check candles..." 
+                      value={formEmotion}
+                      onChange={(e) => setFormEmotion(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-1">Calibration or Alignment Notes</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Alpha executed dynamic calibration, DXY supported quarter ceiling..." 
+                      value={formExecutionNotes}
+                      onChange={(e) => setFormExecutionNotes(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-white font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 text-right">
+                  <button 
+                    type="submit"
+                    className="bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-mono text-xs font-bold px-6 py-2.5 rounded-lg border border-emerald-500/30 transition-all shadow-md"
+                  >
+                    💾 LOCK JOURNAL RECORD
+                  </button>
+                </div>
+              </form>
+            </details>
+
+            {/* CHRONOLOGICAL DAY CARDS (REVERSED TO SHOW NEWEST FIRST) */}
+            <div className="space-y-6">
+              {[...journal].reverse().map((day) => {
+                const isProfitable = day.endBalance > day.startBalance;
+                const isScratch = day.endBalance === day.startBalance;
+                
+                return (
+                  <div 
+                    key={day.day}
+                    className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 md:p-6 backdrop-blur-md hover:border-slate-700 transition duration-200"
+                  >
+                    {/* CARD HEADER */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4 mb-4">
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-lg">
+                            DAY {day.day}
+                          </span>
+                          <h3 className="text-base font-bold font-mono text-white">
+                            {day.dayLabel}
+                          </h3>
+                        </div>
+                        <p className="text-[11px] font-mono text-slate-500 mt-1">
+                          Session duration: {day.sessionStart} – {day.sessionEnd} WAT (UTC+1)
+                        </p>
+                      </div>
+
+                      {/* STATS CAPSULE */}
+                      <div className="flex items-center gap-3 font-mono">
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-500 block">ACCOUNT CAP</span>
+                          <span className="text-sm font-bold text-slate-300">${day.endBalance.toFixed(2)}</span>
+                        </div>
+                        <div className={`px-3 py-1.5 rounded-xl border text-xs font-bold text-center ${
+                          day.rTotalDay > 0 
+                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+                            : day.rTotalDay < 0 
+                            ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' 
+                            : 'bg-slate-800 border-slate-700 text-slate-400'
+                        }`}>
+                          {day.rTotalDay >= 0 ? '+' : ''}{day.rTotalDay}R
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* STRIKES INSIDE THIS DAY */}
+                    <div className="space-y-4">
+                      {day.strikes.length === 0 ? (
+                        <div className="bg-slate-950/40 border border-dashed border-slate-800 rounded-xl p-4 text-center">
+                          <p className="text-xs font-mono text-slate-500">
+                            🚫 NO VALID STRIKES TRIGGERED DURING SESSIONS
+                          </p>
+                          <p className="text-[10px] text-slate-600 font-mono mt-1">
+                            Entire market environment failed volatility (ATR) or momentum (ADX) thresholds. No capital risked.
+                          </p>
+                        </div>
+                      ) : (
+                        day.strikes.map((s, idx) => {
+                          const isVetoed = s.status === 'VETOED';
+                          const isTp = s.status === 'TP HIT';
+                          const isLoss = s.status === 'SL HIT';
+                          
+                          return (
+                            <div 
+                              key={s.id || idx}
+                              className={`rounded-xl border p-4 font-mono transition-all ${
+                                isVetoed 
+                                  ? 'bg-rose-950/5 border-rose-950/30' 
+                                  : isTp 
+                                  ? 'bg-emerald-950/10 border-emerald-500/20' 
+                                  : isLoss 
+                                  ? 'bg-rose-950/10 border-rose-500/20'
+                                  : 'bg-slate-950/40 border-slate-800'
+                              }`}
+                            >
+                              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <div className="flex items-center gap-3">
+                                  <span className={`w-2 h-2 rounded-full ${
+                                    isVetoed ? 'bg-amber-500 animate-pulse' : isTp ? 'bg-emerald-400 animate-bounce' : 'bg-rose-500'
+                                  }`}></span>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-bold text-white">{s.pair}</span>
+                                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                                        s.direction === 'BUY' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'
+                                      }`}>
+                                        {s.direction}
+                                      </span>
+                                    </div>
+                                    <span className="text-[10px] text-slate-500">Trigger time: {s.time} WAT</span>
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-3 text-xs">
+                                  {isVetoed ? (
+                                    <span className="px-2 py-1 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold text-[10px]">
+                                      🚫 VETOED BY {s.rejectionEngine}
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <span className="text-slate-400">Entry: <strong className="text-white">{s.entryPrice}</strong></span>
+                                      <span className="text-slate-400">Exit: <strong className="text-white">{s.exitPrice}</strong></span>
+                                      <span className="text-slate-400">SL: <strong className="text-rose-400">{s.sl}</strong></span>
+                                      <span className="text-slate-400">TP: <strong className="text-emerald-400">{s.tp}</strong></span>
+                                      <span className={`font-bold ${isTp ? 'text-emerald-400' : 'text-slate-400'}`}>
+                                        {isTp ? `+$${s.resultAmount.toFixed(2)}` : `-$${Math.abs(s.resultAmount).toFixed(2)}`}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* VETO DETAILED SUMMARY */}
+                              {isVetoed && (
+                                <div className="mt-3 bg-slate-950/60 border border-rose-950/50 rounded-lg p-3 text-[11px] leading-relaxed text-rose-300">
+                                  <strong className="text-rose-400">VETO BREAKDOWN:</strong> {s.rejectionReason}
+                                </div>
+                              )}
+
+                              {s.note && (
+                                <div className="mt-2.5 text-[10px] text-slate-400 border-l-2 border-slate-700 pl-3 italic">
+                                  💡 Note: {s.note}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* DAY SUMMARY FOOTER */}
+                    <div className="mt-4 pt-4 border-t border-slate-800 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+                      <div>
+                        <span className="text-slate-500 block">SESSION SUMMARY:</span>
+                        <p className="text-slate-300 mt-1 leading-relaxed">{day.summary}</p>
+                      </div>
+                      <div className="bg-slate-950/40 p-3 rounded-lg border border-slate-800/60">
+                        <span className="text-slate-400 font-bold block">🧠 CXO PSYCH-CHECK:</span>
+                        <div className="mt-1 text-slate-300 text-[11px] space-y-1">
+                          <p><strong className="text-amber-400">Execution:</strong> {day.psychCheck?.execution}</p>
+                          <p><strong className="text-teal-400">Emotion:</strong> {day.psychCheck?.emotion}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                );
+              })}
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 3: VISUAL ANALYTICS */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-6 animate-fade-in">
+            
+            {/* INTERACTIVE CUSTOM SVG CHARTS */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* Account Equity Curve Line Graph */}
+              <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 shadow-lg space-y-4">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                  <h3 className="text-xs font-mono font-bold tracking-widest text-slate-400">
+                    📈 ACCOUNT EQUITY GROWTH CURVE ($)
+                  </h3>
+                  <span className="text-xs font-mono font-bold text-emerald-400">${currentBalance.toFixed(2)}</span>
+                </div>
+                
+                {/* Simulated high-fidelity SVG equity curve */}
+                <div className="relative h-64 w-full">
+                  <svg className="w-full h-full" viewBox="0 0 500 200" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="curveGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity="0.35" />
+                        <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+
+                    {/* Grid Lines */}
+                    <line x1="0" y1="150" x2="500" y2="150" stroke="#1e293b" strokeDasharray="3" />
+                    <line x1="0" y1="100" x2="500" y2="100" stroke="#1e293b" strokeDasharray="3" />
+                    <line x1="0" y1="50" x2="500" y2="50" stroke="#1e293b" strokeDasharray="3" />
+
+                    {/* Area under the line */}
+                    {/* Points mapping:
+                        D1 ($100): 150
+                        D2 ($101.2): 135
+                        D3 ($101.2): 135
+                        D4 ($103.6): 105
+                        D5 ($103.59): 105
+                        D6 ($104.79): 90
+                        D7 ($105.99): 75
+                        D8 ($105.99): 75
+                    */}
+                    <path 
+                      d="M 10 150 L 70 150 L 140 135 L 210 135 L 280 105 L 350 105 L 420 90 L 490 75 L 490 200 L 10 200 Z" 
+                      fill="url(#curveGradient)" 
+                    />
+
+                    {/* Main Line */}
+                    <path 
+                      d="M 10 150 L 70 150 L 140 135 L 210 135 L 280 105 L 350 105 L 420 90 L 490 75" 
+                      fill="none" 
+                      stroke="#10b981" 
+                      strokeWidth="3.5" 
+                      strokeLinecap="round"
+                    />
+
+                    {/* Interactive Points */}
+                    <circle cx="10" cy="150" r="4" fill="#080c14" stroke="#10b981" strokeWidth="2" />
+                    <circle cx="70" cy="150" r="4" fill="#080c14" stroke="#10b981" strokeWidth="2" />
+                    <circle cx="140" cy="135" r="4" fill="#080c14" stroke="#10b981" strokeWidth="2" />
+                    <circle cx="210" cy="135" r="4" fill="#080c14" stroke="#10b981" strokeWidth="2" />
+                    <circle cx="280" cy="105" r="4" fill="#080c14" stroke="#10b981" strokeWidth="2" />
+                    <circle cx="350" cy="105" r="4" fill="#080c14" stroke="#10b981" strokeWidth="2" />
+                    <circle cx="420" cy="90" r="4" fill="#080c14" stroke="#10b981" strokeWidth="2" />
+                    <circle cx="490" cy="75" r="4" fill="#080c14" stroke="#10b981" strokeWidth="2" />
+                  </svg>
+                  
+                  {/* Point Labels Overlay */}
+                  <div className="absolute top-0 left-0 w-full h-full flex justify-between px-2 text-[8px] font-mono text-slate-500 pointer-events-none">
+                    <span className="mt-40">Day 1: $100</span>
+                    <span className="mt-36">Day 3: $101.2</span>
+                    <span className="mt-28">Day 5: $103.5</span>
+                    <span className="mt-14">Day 7: $105.9</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pie Chart: Distribution & Rejections */}
+              <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 shadow-lg space-y-4 flex flex-col justify-between">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                  <h3 className="text-xs font-mono font-bold tracking-widest text-slate-400">
+                    📊 CONVICTION & VETO RATIO DETECTED
+                  </h3>
+                  <span className="text-[10px] font-mono text-slate-500">{totalStrikes.length} Signals Analyzed</span>
+                </div>
+
+                <div className="flex flex-col md:flex-row items-center gap-6 py-4">
+                  
+                  {/* Custom SVG Pie representation */}
+                  <div className="w-36 h-36 relative flex-shrink-0">
+                    <svg className="w-full h-full" viewBox="0 0 36 36">
+                      {/* Entire background */}
+                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#1e293b" strokeWidth="4" />
+                      
+                      {/* Vetoes Segment (Green/Red proportional breakdown)
+                          Say, 7 vetoes vs 5 live trades. Veto percentage is ~58%.
+                      */}
+                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f43f5e" strokeWidth="4.2" 
+                        strokeDasharray="58 42" strokeDashoffset="25" />
+                      
+                      {/* Wins Segment (4/5 is 80% of live trades) */}
+                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#10b981" strokeWidth="4.5" 
+                        strokeDasharray="33 67" strokeDashoffset="83" />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col justify-center items-center text-center leading-none">
+                      <span className="text-lg font-black font-mono text-white">{vetoes}</span>
+                      <span className="text-[9px] font-mono text-slate-500 mt-1">VETOES</span>
+                    </div>
+                  </div>
+
+                  {/* Legends & Weights */}
+                  <div className="flex-1 space-y-3 font-mono text-xs">
+                    <div className="flex justify-between items-center border-b border-slate-800/40 pb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded bg-emerald-500 inline-block"></span>
+                        <span className="text-slate-300">Live Wins (Take Profit)</span>
+                      </div>
+                      <span className="text-white font-bold">{wins} strikes</span>
+                    </div>
+                    <div className="flex justify-between items-center border-b border-slate-800/40 pb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded bg-amber-500 inline-block"></span>
+                        <span className="text-slate-300">Live Scratch / BE</span>
+                      </div>
+                      <span className="text-white font-bold">{scratches}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-b border-slate-800/40 pb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded bg-rose-500 inline-block"></span>
+                        <span className="text-slate-300">Capital Protection Vetoes</span>
+                      </div>
+                      <span className="text-white font-bold">{vetoes} blockings</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 leading-snug">
+                      Over <strong>58%</strong> of proposed vectors were systematically rejected by our shielding system. Capital safety first.
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+
+            {/* PERFORMANCE BAR GRAPH (Daily R-Total Progression) */}
+            <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 shadow-lg space-y-4">
+              <h3 className="text-xs font-mono font-bold tracking-widest text-slate-400 border-b border-slate-800 pb-2">
+                📊 DAILY R-TOTAL EXTRACTED PROGRESSION
+              </h3>
+              
+              <div className="h-44 flex items-end justify-between gap-2.5 pt-6 font-mono">
+                {journal.map((j) => {
+                  const isPositive = j.rTotalDay > 0;
+                  const isNegative = j.rTotalDay < 0;
+                  const heightPercentage = j.rTotalDay === 0 ? '4%' : `${(Math.abs(j.rTotalDay) / 1.5) * 85}%`;
+                  
+                  return (
+                    <div key={j.day} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group cursor-pointer">
+                      <span className={`text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
+                        isPositive ? 'text-emerald-400' : isNegative ? 'text-rose-400' : 'text-slate-500'
+                      }`}>
+                        {isPositive ? '+' : ''}{j.rTotalDay}R
+                      </span>
+                      
+                      <div 
+                        style={{ height: heightPercentage }}
+                        className={`w-full rounded-t-md transition-all duration-300 group-hover:brightness-110 ${
+                          isPositive 
+                            ? 'bg-gradient-to-t from-emerald-600 to-emerald-400 shadow-lg shadow-emerald-500/10' 
+                            : isNegative 
+                            ? 'bg-gradient-to-t from-rose-600 to-rose-400 shadow-lg shadow-rose-500/10' 
+                            : 'bg-slate-800'
+                        }`}
+                      ></div>
+                      
+                      <span className="text-[10px] text-slate-500 font-bold">D{j.day}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* HEATMAP GRID: BEST TRADING TIMES */}
+            <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 shadow-lg space-y-4">
+              <h3 className="text-xs font-mono font-bold tracking-widest text-slate-400 border-b border-slate-800 pb-2">
+                🔥 HEATMAP: TIME-OF-DAY EXECUTION ENERGY
+              </h3>
+              <p className="text-[11px] text-slate-400 font-mono">
+                Visualizing volatility triggers based on WAT (GMT+1). Best surgical momentum observed early mornings.
+              </p>
+
+              <div className="grid grid-cols-4 md:grid-cols-8 gap-2 font-mono text-[10px] text-center pt-2">
+                {[
+                  { hour: "07:30 - 08:00", active: "HIGH", bg: "bg-emerald-950/40 border border-emerald-500/20 text-emerald-400" },
+                  { hour: "08:00 - 08:30", active: "EXTREME", bg: "bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold" },
+                  { hour: "08:30 - 09:00", active: "EXTREME", bg: "bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-bold" },
+                  { hour: "09:00 - 09:30", active: "MODERATE", bg: "bg-emerald-950/30 border border-emerald-800/40 text-emerald-400" },
+                  { hour: "09:30 - 10:00", active: "LOW", bg: "bg-slate-900/60 text-slate-500 border border-slate-800" },
+                  { hour: "15:30 - 16:00", active: "MODERATE", bg: "bg-emerald-950/30 border border-emerald-800/40 text-emerald-400" },
+                  { hour: "16:00 - 16:30", active: "HIGH", bg: "bg-emerald-950/40 border border-emerald-500/20 text-emerald-400" },
+                  { hour: "16:30 - 17:30", active: "LOW", bg: "bg-slate-900/60 text-slate-500 border border-slate-800" }
+                ].map((slot, idx) => (
+                  <div key={idx} className={`p-3 rounded-lg flex flex-col justify-between h-16 ${slot.bg}`}>
+                    <span className="font-bold block text-white">{slot.hour}</span>
+                    <span className="text-[8px] mt-1 tracking-wider">{slot.active} ENERGY</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 4: AI COACH */}
+        {activeTab === 'coach' && (
+          <div className="space-y-6 animate-fade-in">
+            
+            {/* INSTRUCTIONS ON GEMINI MODEL FALLBACKS & CONTROLLER */}
+            <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 shadow-lg space-y-4">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h3 className="text-sm font-mono font-bold tracking-widest text-slate-200">
+                    🤖 AI SURGICAL TRADING COACH (CLIENT-SIDE GEMINI API)
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono mt-1">
+                    Direct connection to <strong className="text-emerald-400">gemini-2.5-flash-preview-09-2025</strong>. If no key is configured, an advanced localized rule model performs immediate mental and alignment audits.
+                  </p>
+                </div>
+                
+                {/* Api Key Config Trigger */}
+                <button
+                  onClick={() => {
+                    setShowKeyField(!showKeyField);
+                    playSound('click');
+                  }}
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-xs px-3.5 py-1.5 rounded-lg border border-slate-700 transition"
+                >
+                  ⚙️ {showKeyField ? "HIDE API SETTING" : "CONFIGURE GEMINI API KEY"}
+                </button>
+              </div>
+
+              {showKeyField && (
+                <div className="bg-slate-950 border border-slate-800 p-4 rounded-lg space-y-3 font-mono text-xs animate-slide-down">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400">INPUT GEMINI API KEY:</span>
+                    <span className="text-[10px] text-slate-500 italic">Saved directly to your browser's local state</span>
+                  </div>
+                  <input 
+                    type="password" 
+                    placeholder="AIzaSy..." 
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white font-mono text-xs"
+                  />
+                  <p className="text-[9px] text-slate-500 leading-normal">
+                    * If left blank, the app relies on internal rule-based algorithms parsing Day 1-8 logs for performance audits.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* CHAT INTERACTIVE PANEL */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* Input Panel */}
+              <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 shadow-lg space-y-4 flex flex-col justify-between">
+                <div>
+                  <h4 className="text-xs font-mono font-bold tracking-widest text-slate-400 border-b border-slate-800 pb-2">
+                    COMMAND CENTER
+                  </h4>
+                  <p className="text-xs text-slate-500 font-mono leading-relaxed mt-2">
+                    Prompt the AI Coach to look over your mental metrics, analyze DXY correlation anomalies, or audit Alpha's Dynamic Re-Synchronization accuracy.
+                  </p>
+                  
+                  <textarea
+                    rows={6}
+                    placeholder="Ask anything or leave blank for a comprehensive global journal audit..."
+                    value={aiInput}
+                    onChange={(e) => setAiInput(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white font-mono mt-4 focus:border-emerald-500 outline-none transition"
+                  ></textarea>
+                </div>
+
+                <button
+                  onClick={handleAiAnalysis}
+                  disabled={aiLoading}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-mono text-xs font-bold py-3 rounded-xl border border-emerald-500/30 transition shadow-md disabled:opacity-40"
+                >
+                  {aiLoading ? "🤖 RUNNING HEURISTIC DEEP DIVE..." : "⚡ DETECT PSYCHOLOGICAL & STRATEGY PATTERNS"}
+                </button>
+              </div>
+
+              {/* Output Panel (Glassmorphism terminal look) */}
+              <div className="lg:col-span-2 bg-slate-950/60 border border-slate-800 rounded-xl p-5 shadow-inner relative flex flex-col">
+                <div className="flex justify-between items-center border-b border-slate-800/80 pb-2 mb-4">
+                  <span className="text-xs font-mono font-bold text-teal-400">🤖 COACH DEBRIEF FEEDBACK</span>
+                  <span className="text-[9px] font-mono text-slate-500">ENGINE: gemini-2.5-flash-preview-09-2025</span>
+                </div>
+
+                <div className="flex-1 overflow-y-auto max-h-[350px] font-mono text-xs leading-relaxed text-slate-300 space-y-3 whitespace-pre-line pr-2">
+                  {aiResponse ? (
+                    aiResponse
+                  ) : (
+                    <div className="text-slate-500 italic text-center py-20">
+                      No debrief conducted yet. Click "Detect Psychological & Strategy Patterns" to initialize.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 5: MAY 2026 CALENDAR */}
+        {activeTab === 'calendar' && (
+          <div className="space-y-6 animate-fade-in">
+            
+            <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h3 className="text-sm font-mono font-bold tracking-widest text-slate-200">
+                    📅 MAY 2026 CALENDAR-STYLE PROFIT TRACKER
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono mt-1">
+                    Calendar heat representing trading days. Green days = Profitable. Gray/Yellow = Veto / Scratch. Black = Non-trading weekends.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-mono">
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-emerald-500 rounded"></span> Profitable</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-slate-800 rounded border border-slate-700"></span> Veto/No Trade</span>
+                </div>
+              </div>
+
+              {/* May 2026 Calendar Grid */}
+              <div className="grid grid-cols-7 gap-2 mt-6 text-center text-xs font-mono">
+                {/* Day of Week Headers */}
+                {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
+                  <div key={d} className="text-slate-500 font-bold text-[10px] py-1">{d}</div>
+                ))}
+
+                {/* Blank days for May 2026 starting on Friday */}
+                {Array(5).fill(null).map((_, i) => (
+                  <div key={`blank-${i}`} className="p-3 bg-transparent rounded-lg opacity-20"></div>
+                ))}
+
+                {/* Days 1 to 31 */}
+                {Array(31).fill(null).map((_, idx) => {
+                  const dayNum = idx + 1;
+                  const dateStr = `2026-05-${dayNum.toString().padStart(2, '0')}`;
+                  
+                  // Match with our logged journal data
+                  const matchedJournal = journal.find(j => j.date === dateStr);
+                  
+                  let cellBg = "bg-slate-900/20 text-slate-600 border border-transparent";
+                  let detailText = "";
+
+                  if (matchedJournal) {
+                    if (matchedJournal.rTotalDay > 0) {
+                      cellBg = "bg-emerald-950/40 text-emerald-400 border border-emerald-500/30 font-bold";
+                      detailText = `+$${(matchedJournal.endBalance - matchedJournal.startBalance).toFixed(2)}`;
+                    } else if (matchedJournal.rTotalDay < 0) {
+                      cellBg = "bg-rose-950/40 text-rose-400 border border-rose-500/30 font-bold";
+                      detailText = `-$${Math.abs(matchedJournal.endBalance - matchedJournal.startBalance).toFixed(2)}`;
+                    } else {
+                      cellBg = "bg-slate-900 text-slate-300 border border-slate-800";
+                      detailText = "VETOED";
+                    }
+                  } else {
+                    // Check if weekend (May 2026: May 2, 3, 9, 10, 16, 17, 23, 24, 30, 31)
+                    const isWeekend = [2, 3, 9, 10, 16, 17, 23, 24, 30, 31].includes(dayNum);
+                    if (isWeekend) {
+                      cellBg = "bg-slate-950/80 text-slate-700";
+                      detailText = "OFF";
+                    }
+                  }
+
+                  return (
+                    <div key={dayNum} className={`p-3 rounded-xl min-h-[64px] flex flex-col justify-between items-center transition-all hover:scale-[1.03] ${cellBg}`}>
+                      <span className="font-bold text-[10px] self-start">{dayNum}</span>
+                      <span className="text-[9px] mt-2 block tracking-tighter leading-none">{detailText}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 6: SNIPER RULES */}
+        {activeTab === 'rules' && (
+          <div className="space-y-6 animate-fade-in font-mono text-xs">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Foundation Law */}
+              <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-3">
+                <h3 className="text-sm font-bold text-emerald-400 border-b border-slate-800 pb-2">
+                  🏛️ SECTION I: THE FOUNDATION LAW
+                </h3>
+                <p className="text-slate-300 leading-relaxed">
+                  The Kitchen is governed by strictly automated risk frameworks. Handled with 100% emotional detachment.
+                </p>
+                <ul className="space-y-2 text-slate-400 list-disc list-inside">
+                  <li>Demo Capital perimeter: <strong className="text-white">$100.00</strong>.</li>
+                  <li>Lot size allocation: <strong className="text-white">0.01 Fixed</strong> (non-negotiable).</li>
+                  <li>Surgical restriction: <strong className="text-white">Max 1 Trade</strong> per day.</li>
+                  <li>If Stop Loss is touched, the kitchen closes immediately.</li>
+                  <li>If Take Profit is touched, the kitchen closes immediately.</li>
+                </ul>
+              </div>
+
+              {/* Alpha Hunter Mandate */}
+              <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-3">
+                <h3 className="text-sm font-bold text-teal-400 border-b border-slate-800 pb-2">
+                  🏹 SECTION II: ALPHA'S HUNTER MANDATE (SIGNAL ENGINE)
+                </h3>
+                <p className="text-slate-300 leading-relaxed">
+                  Responsible for discovering structural coordinates, trend strength calculations, and exit coordinates.
+                </p>
+                <ul className="space-y-2 text-slate-400 list-disc list-inside">
+                  <li><strong>L0 — Trend energy:</strong> M5 ADX must be greater than 25.</li>
+                  <li><strong>L1 — Direction alignment:</strong> Align with M5/M15 trend structures.</li>
+                  <li><strong>L5 — Volatility support:</strong> M15 ADX must confirm energy (&gt;18).</li>
+                  <li><strong>L8 — Exhaustion veto:</strong> Disregard strike if candle wick is over 30% of entire body.</li>
+                  <li><strong>Math parameters:</strong> Targets calculated strictly at 1.5x risk distance (1.5R).</li>
+                </ul>
+              </div>
+
+              {/* Beta Guard Mandate */}
+              <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-3">
+                <h3 className="text-sm font-bold text-rose-400 border-b border-slate-800 pb-2">
+                  🛡️ SECTION III: BETA'S GUARD MANDATE (SAFETY GATE)
+                </h3>
+                <p className="text-slate-300 leading-relaxed">
+                  Responsible for shielding open equity, monitoring global correlations, and protecting against hardware lag.
+                </p>
+                <ul className="space-y-2 text-slate-400 list-disc list-inside">
+                  <li><strong>L3 — Volatility (ATR):</strong> Threshold must exceed 0.00028. No energy = No Trade.</li>
+                  <li><strong>L4 — Structural health:</strong> Reject spinning tops, dojis, and hyper corrective pulls.</li>
+                  <li><strong>L7 — Psychological gravity:</strong> Issue advisor warning if within 5 pips of quarter handles (.500, .000).</li>
+                  <li><strong>L9 — Correlative pressure:</strong> Veto execution if DXY shows erratic volatile spikes.</li>
+                </ul>
+              </div>
+
+              {/* News Veto Protocol */}
+              <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-3">
+                <h3 className="text-sm font-bold text-amber-400 border-b border-slate-800 pb-2">
+                  🔴 SECTION VI: LAW OF NEWS VETO (PAUSE PROTOCOL)
+                </h3>
+                <p className="text-slate-300 leading-relaxed">
+                  Dictates automatic halts of the entire pipeline prior to extreme high impact news releases.
+                </p>
+                <ul className="space-y-2 text-slate-400">
+                  <li className="flex justify-between border-b border-slate-800 py-1">
+                    <span className="text-rose-400 font-bold">🔴 RED IMPACT NEWS:</span>
+                    <span className="text-white font-bold">T - 5 to T + 60 mins Pause</span>
+                  </li>
+                  <li className="flex justify-between border-b border-slate-800 py-1">
+                    <span className="text-amber-400 font-bold">🟠 ORANGE IMPACT NEWS:</span>
+                    <span className="text-white font-bold">T - 2 to T + 30 mins Pause</span>
+                  </li>
+                  <li className="flex justify-between border-b border-slate-800 py-1">
+                    <span className="text-slate-400">🟡 YELLOW IMPACT NEWS:</span>
+                    <span className="text-white font-bold">No automatic pause</span>
+                  </li>
+                </ul>
+              </div>
+
+            </div>
+
+            {/* STRUCTURAL SUPREMACY BANNER */}
+            <div className="bg-slate-950 p-5 border border-slate-800 rounded-xl space-y-2 text-center">
+              <h4 className="font-bold text-slate-200">"THE PRINCIPLE OF STRUCTURAL SUPREMACY"</h4>
+              <p className="text-slate-400 leading-relaxed text-xs max-w-2xl mx-auto italic">
+                "The Strike is governed by Price, not Time. Once the Hunter (Alpha) sets the coordinates and the Shield (Beta) clears the path, the CXO surrenders the clock. We do not hunt seconds; we hunt distance."
+              </p>
+            </div>
+
+          </div>
+        )}
+
+      </main>
+
+      {/* SYSTEM TERMINAL FOOTER */}
+      <footer className="bg-slate-950 border-t border-slate-900 py-6 px-4 text-center text-xs font-mono text-slate-500">
+        <p>© 2026 THE FX SNIPER KITCHEN II. ALL RIGHTS RESERVED. OPERATING IN THE MON, MAY 11, 2026 TIMELINE.</p>
+        <p className="mt-1 text-slate-600">PREMIUM INSTITUTIONAL ANALYTICS ENGINE • DESIGNED WITH COLD DISCIPLINE.</p>
+      </footer>
+
+    </div>
+  );
+}
