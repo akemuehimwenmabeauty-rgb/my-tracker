@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 0 Tracker</title>
+    <!-- Tailwind CSS for mobile layout styling -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen p-4 flex flex-col items-center">
+
+    <div class="w-full max-w-md bg-slate-900 rounded-2xl shadow-2xl p-6 mt-6 border border-slate-800">
+        <h1 class="text-2xl font-bold text-center mb-1 text-indigo-400">Phase 0 Tracker 🎯</h1>
+        <p class="text-slate-400 text-center text-xs mb-6">Surgical Forex Extractions</p>
+
+        <!-- Tracker Dashboard Stats -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-center">
+                <div class="text-xs text-slate-500 font-medium uppercase">Extractions</div>
+                <div id="extractionCount" class="text-xl font-bold text-emerald-400 mt-1">5 / 50</div>
+            </div>
+            <div class="bg-slate-950/50 border border-slate-800 rounded-xl p-3 text-center">
+                <div class="text-xs text-slate-500 font-medium uppercase">Target Progress</div>
+                <div class="text-xl font-bold text-indigo-400 mt-1">10%</div>
+            </div>
+        </div>
+
+        <!-- Input Section -->
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Session Logs & Notes</label>
+                <textarea id="logInput" rows="6" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-indigo-500 placeholder-slate-600 text-sm" placeholder="Paste session metrics, pairs monitored, or execution notes here..."></textarea>
+            </div>
+            
+            <button id="saveBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition duration-200 shadow-lg shadow-indigo-600/20 active:scale-98">
+                Save Progress 💾
+            </button>
+        </div>
+
+        <!-- Status indicator -->
+        <div id="statusMsg" class="text-center text-xs text-emerald-400 mt-3 opacity-0 transition-opacity duration-300">
+            Securely saved to local storage! ✅
+        </div>
+    </div>
+
+    <script>
+        const logInput = document.getElementById('logInput');
+        const saveBtn = document.getElementById('saveBtn');
+        const statusMsg = document.getElementById('statusMsg');
+
+        // Check phone memory on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedData = localStorage.getItem('phase0_trackerData');
+            if (savedData) {
+                logInput.value = savedData;
+            }
+        });
+
+        // Save input to phone memory
+        saveBtn.addEventListener('click', () => {
+            localStorage.setItem('phase0_trackerData', logInput.value);
+
+            // Flash success message
+            statusMsg.classList.remove('opacity-0');
+            setTimeout(() => {
+                statusMsg.classList.add('opacity-0');
+            }, 2500);
+        });
+    </script>
+</body>
+</html>
