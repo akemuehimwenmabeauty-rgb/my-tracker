@@ -4,482 +4,143 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>THE FX SNIPER KITCHEN II</title>
-    
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-    
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
         
-        html, body {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            text-rendering: optimizeLegibility;
-            font-family: 'Inter', sans-serif;
-            background-color: #0b1019;
-            color: #f1f5f9;
-        }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
-        
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.7);
-            border: 1px solid rgba(51, 65, 85, 0.5);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-        
-        img { image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0b1019; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        body { background-color: #050505; color: #E5E7EB; font-family: 'Inter', sans-serif; }
+        .gold-border { border: 1px solid #D4AF37; }
+        .bg-gold-gradient { background: linear-gradient(135deg, #463914 0%, #050505 100%); }
+        .text-gold { color: #D4AF37; }
+        .glass { background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(10px); }
     </style>
 </head>
-<body class="min-h-screen selection:bg-emerald-500/30">
+<body class="min-h-screen">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const initialJournal = [
-            { id: 1, date: 11, pair: 'GBP/USD', dir: 'BUY', result: 'Veto', r: 0, cash: 0, notes: 'L9 Global Correlation Conflict. DXY Spiking.' },
-            { id: 2, date: 12, pair: 'GBP/USD', dir: 'SELL', result: 'Win', r: 1.5, cash: 1.20, notes: 'Temporal Veto avoided. Clean extraction post-news.' },
-            { id: 3, date: 13, pair: 'GBP/USD', dir: 'NO TRADE', result: 'Veto', r: 0, cash: 0, notes: 'Toxic wicks, structural chop.' },
-            { id: 4, date: 14, pair: 'GBP/USD', dir: 'SELL', result: 'Win', r: 1.5, cash: 2.40, notes: 'Century level breakdown. Recalibrated.' },
-            { id: 5, date: 15, pair: 'EUR/GBP', dir: 'BUY', result: 'Scratch', r: -0.02, cash: -0.01, notes: 'Friday liquidity collapse. Manual kill.' },
-            { id: 6, date: 18, pair: 'GBP/USD', dir: 'BUY', result: 'Win', r: 1.5, cash: 1.20, notes: 'Clean Monday expansion. Perfect setup.' },
-            { id: 7, date: 19, pair: 'AUD/USD', dir: 'SELL', result: 'Win', r: 1.5, cash: 1.20, notes: 'Rotated from GBP. Textbook institutional cascade.' },
-            { id: 8, date: 20, pair: 'N/A', dir: 'N/A', result: 'Veto', r: 0, cash: 0, notes: 'No clean environment. Capital preserved.' }
-        ];
-
-        const playSound = (type) => {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gainNode = ctx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(ctx.destination);
-            
-            if (type === 'win') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
-                gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-                osc.start(); osc.stop(ctx.currentTime + 0.3);
-            } else if (type === 'loss') {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
-                gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-                osc.start(); osc.stop(ctx.currentTime + 0.3);
-            } else if (type === 'click') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(400, ctx.currentTime);
-                gainNode.gain.setValueAtTime(0.05, ctx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-                osc.start(); osc.stop(ctx.currentTime + 0.1);
-            }
-        };
-
         const App = () => {
             const [view, setView] = useState('dashboard');
-            const [journal, setJournal] = useState(() => {
-                const saved = localStorage.getItem('fx_sniper_v5');
-                return saved ? JSON.parse(saved) : initialJournal;
-            });
-            // NEW: Editable Base Stats
-            const [baseStats, setBaseStats] = useState(() => {
-                const savedStats = localStorage.getItem('fx_base_stats');
-                return savedStats ? JSON.parse(savedStats) : { overrideBalance: 105.99, overrideR: 5.98, overrideWins: 5 };
-            });
-
-            const [logo, setLogo] = useState(localStorage.getItem('fx_logo') || null);
-            const [time, setTime] = useState('');
-
-            // Calculations based on overrides + any NEW trades added after setup
-            // We assume the overrides reflect the exact state at Day 8. 
-            // Any trades with ID > initialJournal last ID are considered "new" and add to the overrides.
-            const newTrades = journal.filter(t => t.id > 8); // IDs 1-8 are preloaded
-            
-            const totalR = baseStats.overrideR + newTrades.reduce((acc, t) => acc + t.r, 0);
-            const balance = baseStats.overrideBalance + newTrades.reduce((acc, t) => acc + t.cash, 0);
-            
-            const baseWins = baseStats.overrideWins;
-            const extraWins = newTrades.filter(t => t.result === 'Win').length;
-            const extraLosses = newTrades.filter(t => t.result === 'Loss').length;
-            
-            const totalWins = baseWins + extraWins;
-            const validTrades = totalWins + extraLosses; 
-            const winRate = validTrades > 0 ? ((totalWins / validTrades) * 100).toFixed(0) : 100;
+            const [journal, setJournal] = useState(() => JSON.parse(localStorage.getItem('sniper_journal_v4') || '[]'));
+            const [baseStats, setBaseStats] = useState(() => JSON.parse(localStorage.getItem('sniper_base_stats') || '{ "balance": 100, "r": 0, "wins": 0 }'));
+            const [logo, setLogo] = useState(localStorage.getItem('sniper_logo') || null);
 
             useEffect(() => {
-                localStorage.setItem('fx_sniper_v5', JSON.stringify(journal));
-                localStorage.setItem('fx_base_stats', JSON.stringify(baseStats));
-                const timer = setInterval(() => {
-                    setTime(new Date().toLocaleTimeString('en-GB', { timeZone: 'Africa/Lagos' }) + ' WAT');
-                }, 1000);
-                return () => clearInterval(timer);
+                localStorage.setItem('sniper_journal_v4', JSON.stringify(journal));
+                localStorage.setItem('sniper_base_stats', JSON.stringify(baseStats));
             }, [journal, baseStats]);
 
-            const handleLogoUpload = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        setLogo(event.target.result);
-                        localStorage.setItem('fx_logo', event.target.result);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-
-            const addTrade = (tradeData) => {
-                playSound(tradeData.result === 'Win' ? 'win' : tradeData.result === 'Loss' ? 'loss' : 'click');
-                // Ensure unique ID higher than 8 so it counts as a "new trade"
-                setJournal([...journal, { ...tradeData, id: Date.now() }]);
-                setView('dashboard');
-            };
+            const totalProfit = journal.reduce((acc, t) => acc + (t.cash || 0), 0);
+            const totalR = baseStats.r + journal.reduce((acc, t) => acc + (t.r || 0), 0);
+            const balance = baseStats.balance + totalProfit;
+            const wins = baseStats.wins + journal.filter(t => t.result === 'Win').length;
+            const totalTrades = journal.filter(t => t.result !== 'Veto').length;
+            const winRate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(0) : 0;
 
             return (
-                <div className="max-w-6xl mx-auto p-2 md:p-6 flex flex-col gap-4">
-                    <header className="glass-panel rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 border-l-4 border-emerald-500 shadow-xl">
-                        <div className="flex items-center gap-4">
-                            <label className="relative w-16 h-16 bg-[#06090f] rounded-xl border border-dashed border-slate-600 hover:border-emerald-400 flex items-center justify-center cursor-pointer overflow-hidden group transition-colors">
-                                <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
-                                {logo ? (
-                                    <img src={logo} className="w-full h-full object-contain bg-black" alt="Logo" />
-                                ) : (
-                                    <span className="text-[9px] font-bold text-slate-500 group-hover:text-emerald-400 text-center leading-tight">UPLOAD<br/>LOGO</span>
-                                )}
-                            </label>
-                            <div>
-                                <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-indigo-400">THE FX SNIPER KITCHEN II</h1>
-                                <p className="text-[10px] text-slate-400 font-mono tracking-wide">"Ponder the path of thy feet..." - Prov 4:26 📖⚖️</p>
-                            </div>
-                        </div>
-                        <div className="text-right bg-[#06090f] p-2 rounded-lg border border-slate-800">
-                            <div className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">Live Session Time</div>
-                            <div className="text-lg font-black text-amber-400 font-mono">{time}</div>
+                <div className="max-w-4xl mx-auto p-4 md:p-8">
+                    {/* HEADER */}
+                    <header className="glass gold-border p-6 rounded-t-3xl border-b-0 flex flex-col md:flex-row items-center gap-6">
+                        <label className="w-24 h-24 rounded-full bg-black border-2 border-gold-border flex items-center justify-center cursor-pointer overflow-hidden shadow-[0_0_20px_rgba(212,175,55,0.2)]">
+                            <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => { setLogo(ev.target.result); localStorage.setItem('sniper_logo', ev.target.result); };
+                                reader.readAsDataURL(e.target.files[0]);
+                            }} />
+                            {logo ? <img src={logo} className="w-full h-full object-cover" /> : <span className="text-[10px] text-gold text-center">UPLOAD<br/>LOGO</span>}
+                        </label>
+                        <div className="text-center md:text-left">
+                            <h1 className="font-['Cinzel'] text-2xl md:text-4xl text-gold uppercase tracking-widest">FX SNIPER KITCHEN II</h1>
+                            <p className="text-[10px] text-slate-400 italic mt-2">"Ponder the path of thy feet, and let all thy ways be established." — Proverbs 4:26 📖⚖️</p>
                         </div>
                     </header>
 
-                    <nav className="flex gap-2 bg-[#06090f] p-1.5 rounded-xl border border-slate-800 overflow-x-auto">
-                        {['dashboard', 'journal', 'calendar', 'coach'].map(tab => (
-                            <button 
-                                key={tab}
-                                onClick={() => { playSound('click'); setView(tab); }}
-                                className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${view === tab ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'text-slate-500 hover:bg-slate-800'}`}
-                            >
-                                {tab}
+                    {/* NAV */}
+                    <nav className="glass gold-border p-2 flex gap-2">
+                        {['dashboard', 'journal', 'import'].map(t => (
+                            <button key={t} onClick={() => setView(t)} className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest transition-all ${view === t ? 'bg-gold-gradient text-white' : 'text-gold hover:bg-white/5'}`}>
+                                {t}
                             </button>
                         ))}
                     </nav>
 
-                    <main className="min-h-[500px]">
-                        {view === 'dashboard' && <Dashboard journal={journal} balance={balance} totalR={totalR} winRate={winRate} totalWins={totalWins} losses={extraLosses} baseStats={baseStats} setBaseStats={setBaseStats} />}
-                        {view === 'journal' && <JournalForm onAdd={addTrade} />}
-                        {view === 'calendar' && <CalendarTracker journal={journal} />}
-                        {view === 'coach' && <AiCoach journal={journal} winRate={winRate} />}
+                    {/* MAIN */}
+                    <main className="glass gold-border p-6 rounded-b-3xl">
+                        {view === 'dashboard' && <Dashboard balance={balance} rTotal={totalR} winRate={winRate} wins={wins} />}
+                        {view === 'journal' && <JournalList journal={journal} />}
+                        {view === 'import' && <BulkImport onImport={(data) => setJournal([...journal, ...data])} />}
                     </main>
                 </div>
             );
         };
 
-        const Dashboard = ({ journal, balance, totalR, winRate, totalWins, losses, baseStats, setBaseStats }) => {
-            const chartRef = useRef(null);
-            const [isEditing, setIsEditing] = useState(false);
-            const [editVals, setEditVals] = useState(baseStats);
-
-            const handleSave = () => {
-                setBaseStats({
-                    overrideBalance: parseFloat(editVals.overrideBalance) || 0,
-                    overrideR: parseFloat(editVals.overrideR) || 0,
-                    overrideWins: parseInt(editVals.overrideWins) || 0
-                });
-                setIsEditing(false);
-            };
-
-            useEffect(() => {
-                const ctx = chartRef.current.getContext('2d');
-                // Calculate curve based on starting 100 + all historical trades
-                let eqData = [100];
-                let cur = 100;
-                journal.forEach(t => { cur += t.cash; eqData.push(cur); });
-
-                const lineChart = new Chart(ctx, {
-                    type: 'line',
-                    data: { labels: ['Start', ...journal.map(t => 'D'+t.date)], datasets: [{ label: 'Equity', data: eqData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.2 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#1e293b' } } } }
-                });
-
-                return () => { lineChart.destroy(); };
-            }, [journal]);
-
-            return (
-                <div className="space-y-4">
-                    {/* EDITABLE GOALS TOGGLE */}
-                    <div className="flex justify-end">
-                        <button onClick={() => setIsEditing(!isEditing)} className="text-[10px] text-slate-400 font-bold uppercase tracking-widest hover:text-indigo-400 bg-slate-800 px-3 py-1 rounded">
-                            {isEditing ? 'Cancel Edit' : '⚙️ Edit Base Stats'}
-                        </button>
+        const Dashboard = ({ balance, rTotal, winRate, wins }) => (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                    { l: 'DEMO BALANCE', v: `$${balance.toFixed(2)}` },
+                    { l: 'R-TOTAL', v: `${rTotal.toFixed(2)}R` },
+                    { l: 'WIN RATE', v: `${winRate}%` },
+                    { l: 'EXTRACTIONS', v: `${wins} / 50` }
+                ].map((stat, i) => (
+                    <div key={i} className="bg-black p-4 border border-gold-border text-center">
+                        <div className="text-[9px] text-slate-500 tracking-widest mb-1">{stat.l}</div>
+                        <div className="text-xl font-bold text-gold font-['JetBrains_Mono']">{stat.v}</div>
                     </div>
-
-                    {isEditing && (
-                        <div className="glass-panel p-4 rounded-xl border border-indigo-500/50 mb-4 animate-pulse-once">
-                            <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-3">Sync with Journal</h3>
-                            <div className="grid grid-cols-3 gap-3 mb-3">
-                                <div>
-                                    <label className="text-[9px] text-slate-400">Base Balance ($)</label>
-                                    <input type="number" step="0.01" value={editVals.overrideBalance} onChange={e => setEditVals({...editVals, overrideBalance: e.target.value})} className="w-full bg-[#06090f] p-2 rounded text-xs text-white outline-none border border-slate-700" />
-                                </div>
-                                <div>
-                                    <label className="text-[9px] text-slate-400">Base R-Total</label>
-                                    <input type="number" step="0.01" value={editVals.overrideR} onChange={e => setEditVals({...editVals, overrideR: e.target.value})} className="w-full bg-[#06090f] p-2 rounded text-xs text-white outline-none border border-slate-700" />
-                                </div>
-                                <div>
-                                    <label className="text-[9px] text-slate-400">Base Extractions (Wins)</label>
-                                    <input type="number" value={editVals.overrideWins} onChange={e => setEditVals({...editVals, overrideWins: e.target.value})} className="w-full bg-[#06090f] p-2 rounded text-xs text-white outline-none border border-slate-700" />
-                                </div>
-                            </div>
-                            <button onClick={handleSave} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded text-[10px] font-black uppercase w-full">Save Synced Stats</button>
-                        </div>
-                    )}
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <MetricCard title="Demo Balance" value={`$${balance.toFixed(2)}`} color="text-emerald-400" sub="Live Total" />
-                        <MetricCard title="Net R-Total" value={`${totalR >= 0 ? '+' : ''}${totalR.toFixed(2)}R`} color={totalR >= 0 ? "text-emerald-400" : "text-rose-500"} sub="Risk Multipliers" />
-                        <MetricCard title="Win Rate" value={`${winRate}%`} color="text-indigo-400" sub="Overall Accuracy" />
-                        <MetricCard title="Extractions" value={`${totalWins} / 50`} color="text-slate-200" sub="Phase 0 Target" />
-                    </div>
-                    
-                    <div className="glass-panel p-4 rounded-xl h-64 w-full">
-                        <h3 className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2">Equity Curve</h3>
-                        <div className="h-48 relative"><canvas ref={chartRef}></canvas></div>
-                    </div>
-                </div>
-            );
-        };
-
-        const MetricCard = ({ title, value, color, sub }) => (
-            <div className="glass-panel p-4 rounded-xl text-center border-t-2 border-slate-700/50">
-                <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{title}</div>
-                <div className={`text-2xl md:text-3xl font-black font-mono mt-1 ${color}`}>{value}</div>
-                <div className="text-[9px] text-slate-500 font-mono mt-1">{sub}</div>
+                ))}
             </div>
         );
 
-        const JournalForm = ({ onAdd }) => {
-            const [mode, setMode] = useState('manual');
-            const [cashInput, setCashInput] = useState('');
-            const [rawText, setRawText] = useState('');
-
-            const submitManual = (resultType, rVal) => {
-                let parsedCash = parseFloat(cashInput) || 0;
-                if (resultType === 'Loss') parsedCash = -Math.abs(parsedCash);
-                if (resultType === 'Win') parsedCash = Math.abs(parsedCash);
-
-                const form = document.getElementById('logForm');
-                onAdd({
-                    date: new Date().getDate(),
-                    pair: form.pair.value,
-                    dir: form.dir.value,
-                    psych: form.psych.value,
-                    notes: form.notes.value,
-                    result: resultType,
-                    r: rVal,
-                    cash: parsedCash
-                });
-                form.reset();
-                setCashInput('');
-            };
-
-            const submitAutoLog = () => {
-                if (!rawText) return;
-                const txt = rawText.toUpperCase();
-                
-                let pPair = 'GBP/USD';
-                if (txt.includes('AUD/USD') || txt.includes('AUSSIE')) pPair = 'AUD/USD';
-                if (txt.includes('EUR/GBP') || txt.includes('CHUNNEL')) pPair = 'EUR/GBP';
-
-                let pDir = 'NO TRADE';
-                if (txt.includes('BUY')) pDir = 'BUY';
-                if (txt.includes('SELL')) pDir = 'SELL';
-
-                let pResult = 'Veto'; let pR = 0; let pCash = 0;
-                
-                if (txt.includes('TP HIT') || txt.includes('+1.5R')) { pResult = 'Win'; pR = 1.5; }
-                else if (txt.includes('SL HIT') || txt.includes('-1.0R')) { pResult = 'Loss'; pR = -1.0; }
-                else if (txt.includes('SCRATCH') || txt.includes('BE ⚖️')) { pResult = 'Scratch'; pR = 0; }
-
-                // FIXED REGEX: Specifically looks for Profit/Result lines, ignoring Balance
-                const profitMatch = txt.match(/PROFIT:\s*\+?\$?([0-9.]+)/i);
-                const resultMatch = txt.match(/RESULT:\s*-?\$?([0-9.]+)/i);
-                
-                if (profitMatch) {
-                    pCash = parseFloat(profitMatch[1]);
-                } else if (resultMatch) {
-                    pCash = parseFloat(resultMatch[1]);
-                }
-
-                // Force negative if loss
-                if (pResult === 'Loss' || txt.includes('-$')) pCash = -Math.abs(pCash);
-                if (pResult === 'Win') pCash = Math.abs(pCash);
-
-                onAdd({
-                    date: new Date().getDate(),
-                    pair: pPair,
-                    dir: pDir,
-                    psych: "Auto-logged from raw journal.",
-                    notes: "AI Parsed Entry",
-                    result: pResult,
-                    r: pR,
-                    cash: pCash
-                });
-                setRawText('');
+        const BulkImport = ({ onImport }) => {
+            const [text, setText] = useState('');
+            const parse = () => {
+                const lines = text.split('Day');
+                const parsed = lines.map(block => {
+                    if (!block.includes('Profit') && !block.includes('TP HIT')) return null;
+                    const isWin = block.includes('TP HIT') || block.includes('+1.5R');
+                    const cashMatch = block.match(/\$([0-9.]+)/);
+                    const cash = cashMatch ? parseFloat(cashMatch[1]) : 0;
+                    return {
+                        id: Date.now() + Math.random(),
+                        date: 'Bulk',
+                        result: isWin ? 'Win' : 'Loss',
+                        r: isWin ? 1.5 : -1.0,
+                        cash: isWin ? cash : -cash,
+                        notes: 'Bulk Imported'
+                    };
+                }).filter(x => x);
+                onImport(parsed);
+                alert(`Imported ${parsed.length} trades.`);
             };
 
             return (
-                <div className="glass-panel p-6 rounded-xl border-t-2 border-indigo-500">
-                    <div className="flex gap-4 mb-6 border-b border-slate-800 pb-2">
-                        <button onClick={() => setMode('manual')} className={`text-sm font-black uppercase tracking-widest ${mode === 'manual' ? 'text-indigo-400' : 'text-slate-600'}`}>Manual Entry</button>
-                        <button onClick={() => setMode('auto')} className={`text-sm font-black uppercase tracking-widest flex items-center gap-1 ${mode === 'auto' ? 'text-indigo-400' : 'text-slate-600'}`}>🤖 AI Auto-Log</button>
-                    </div>
-
-                    {mode === 'manual' ? (
-                        <form id="logForm" className="space-y-4">
-                            <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-[10px] text-slate-500 font-bold uppercase mb-1">Pair</label>
-                                    <select name="pair" className="w-full bg-[#06090f] border border-slate-700 rounded p-2 text-xs font-mono text-white outline-none focus:border-indigo-500">
-                                        <option>GBP/USD</option><option>AUD/USD</option><option>EUR/GBP</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] text-slate-500 font-bold uppercase mb-1">Direction</label>
-                                    <select name="dir" className="w-full bg-[#06090f] border border-slate-700 rounded p-2 text-xs font-mono text-white outline-none focus:border-indigo-500">
-                                        <option>BUY</option><option>SELL</option><option>NO TRADE</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] text-emerald-500 font-bold uppercase mb-1">Cash Value ($)</label>
-                                    <input type="number" step="0.01" placeholder="e.g. 1.18" value={cashInput} onChange={(e) => setCashInput(e.target.value)} className="w-full bg-[#06090f] border border-emerald-500/50 rounded p-2 text-xs font-mono text-white outline-none focus:border-emerald-500" required />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-[10px] text-slate-500 font-bold uppercase mb-1">Psych & Emotion</label>
-                                <input name="psych" type="text" placeholder="e.g. Calm, obeyed 10-min rule..." className="w-full bg-[#06090f] border border-slate-700 rounded p-2 text-xs text-white outline-none focus:border-indigo-500" />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] text-slate-500 font-bold uppercase mb-1">Execution Notes</label>
-                                <input name="notes" type="text" placeholder="e.g. Recalibrated SL due to slippage..." className="w-full bg-[#06090f] border border-slate-700 rounded p-2 text-xs text-white outline-none focus:border-indigo-500" />
-                            </div>
-                            
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-4 border-t border-slate-800">
-                                <button type="button" onClick={() => submitManual('Win', 1.5)} className="bg-emerald-900/30 text-emerald-400 border border-emerald-500/50 p-3 rounded font-black text-xs uppercase hover:bg-emerald-800/40 transition-colors">
-                                    ✅ TP HIT (+1.5R)
-                                </button>
-                                <button type="button" onClick={() => submitManual('Loss', -1.0)} className="bg-rose-900/30 text-rose-400 border border-rose-500/50 p-3 rounded font-black text-xs uppercase hover:bg-rose-800/40 transition-colors">
-                                    ❌ SL HIT (-1.0R)
-                                </button>
-                                <button type="button" onClick={() => submitManual('Scratch', 0)} className="bg-slate-800 text-slate-300 border border-slate-600 p-3 rounded font-black text-xs uppercase hover:bg-slate-700 transition-colors">
-                                    ⚖️ SCRATCH
-                                </button>
-                                <button type="button" onClick={() => submitManual('Veto', 0)} className="bg-amber-900/30 text-amber-400 border border-amber-500/50 p-3 rounded font-black text-xs uppercase hover:bg-amber-800/40 transition-colors">
-                                    🚫 VETO BLOCKED
-                                </button>
-                            </div>
-                        </form>
-                    ) : (
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-[10px] text-indigo-400 font-bold uppercase mb-1">Paste Raw Journal Block</label>
-                                <textarea value={rawText} onChange={(e) => setRawText(e.target.value)} rows="8" placeholder="Paste your day's log here... e.g. Strike 2 (LIVE EXTRACTION) 🎯 GBP/USD | SELL | TP HIT ✅ | +1.5R ... Profit: +$1.20" className="w-full bg-[#06090f] border border-indigo-500/30 rounded p-3 text-xs font-mono text-slate-300 outline-none focus:border-indigo-500"></textarea>
-                            </div>
-                            <button type="button" onClick={submitAutoLog} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black p-3 rounded text-xs uppercase tracking-widest transition-colors shadow-[0_0_15px_rgba(79,70,229,0.3)]">
-                                🧠 Extract & Log to Matrix
-                            </button>
-                        </div>
-                    )}
+                <div className="space-y-4">
+                    <h2 className="text-gold font-bold uppercase tracking-widest text-sm">Bulk Import History</h2>
+                    <textarea value={text} onChange={e => setText(e.target.value)} className="w-full h-64 bg-black border border-gold-border p-4 text-[10px] text-white font-mono" placeholder="Paste your entire journal text here..."></textarea>
+                    <button onClick={parse} className="bg-gold-gradient w-full py-2 font-bold text-black uppercase tracking-widest">Process Data</button>
                 </div>
             );
         };
 
-        const CalendarTracker = ({ journal }) => {
-            const days = Array.from({ length: 31 }, (_, i) => i + 1);
-            return (
-                <div className="glass-panel p-4 md:p-6 rounded-xl">
-                    <h2 className="text-sm font-black uppercase text-slate-200 tracking-widest mb-4 flex justify-between items-center border-b border-slate-800 pb-2">
-                        <span>MAY 2026 MATRIX</span>
-                        <span className="text-[10px] text-slate-500">Green = Win | Red = Loss | Slate = Veto</span>
-                    </h2>
-                    <div className="grid grid-cols-5 md:grid-cols-7 gap-2">
-                        {days.map(day => {
-                            const dayTrades = journal.filter(t => t.date === day);
-                            const rSum = dayTrades.reduce((acc, t) => acc + t.r, 0);
-                            const isWeekend = (day % 7 === 2) || (day % 7 === 3); 
-                            
-                            let bg = 'bg-[#06090f] border-slate-800 text-slate-500';
-                            let text = 'No Logs';
-                            
-                            if (dayTrades.length > 0) {
-                                if (rSum > 0) { bg = 'bg-emerald-900/20 border-emerald-500 text-emerald-400'; text = `+${rSum}R`; }
-                                else if (rSum < 0) { bg = 'bg-rose-900/20 border-rose-500 text-rose-400'; text = `${rSum}R`; }
-                                else { bg = 'bg-amber-900/10 border-amber-500/50 text-amber-400'; text = 'Veto/Scratch'; }
-                            } else if (isWeekend) {
-                                bg = 'bg-[#0b1019] border-slate-900 text-slate-700 opacity-50'; text = 'Weekend';
-                            }
-
-                            return (
-                                <div key={day} className={`border rounded p-2 flex flex-col h-16 justify-between transition-all ${bg}`}>
-                                    <span className="text-[10px] font-bold">{day}</span>
-                                    <span className="text-[9px] font-mono font-black text-right">{text}</span>
-                                </div>
-                            );
-                        })}
+        const JournalList = ({ journal }) => (
+            <div className="space-y-2">
+                {journal.map((t, i) => (
+                    <div key={i} className="flex justify-between p-3 bg-black border border-slate-800 text-[10px] font-mono">
+                        <span>{t.result}</span>
+                        <span>{t.cash > 0 ? '+' : ''}${t.cash.toFixed(2)}</span>
                     </div>
-                </div>
-            );
-        };
-
-        const AiCoach = ({ journal, winRate }) => {
-            const recent = journal.slice(-3);
-            let analysis = "Monitoring operational parameters... ";
-            
-            if (recent.every(t => t.result === 'Veto')) {
-                analysis = "Multiple vetoes detected. Excellent capital preservation. The environment is dirty. Do not force an entry out of boredom. Discipline is holding.";
-            } else if (recent.some(t => t.result === 'Loss')) {
-                analysis = "Recent SL hit detected. Ensure the 1-Loss Rule is active. Close the kitchen. Do not revenge trade. Review L4 Candle Structure on the loss.";
-            } else if (winRate >= 80) {
-                analysis = "Elite accuracy detected. Warning: Ego expansion imminent. Resurrender to the 10-minute offset. Do not trust your intuition, trust the math.";
-            } else {
-                analysis = "System stable. Continue executing Phase 0. Remember: ONE SHOT, ONE KILL.";
-            }
-
-            return (
-                <div className="glass-panel p-6 rounded-xl border-t-2 border-indigo-400 relative overflow-hidden">
-                    <div className="absolute -right-4 -bottom-8 text-indigo-900/20 font-black text-8xl pointer-events-none">🤖</div>
-                    <div className="relative z-10 space-y-4">
-                        <h2 className="text-sm font-black uppercase text-indigo-400 tracking-widest border-b border-slate-800 pb-2">Alpha/Beta Debug Terminal</h2>
-                        <div className="bg-[#06090f] p-4 rounded-lg border border-slate-800">
-                            <p className="text-xs text-slate-300 font-mono leading-relaxed">{analysis}</p>
-                        </div>
-                        <div className="bg-slate-900 border border-slate-700 p-3 rounded">
-                            <h3 className="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-1">Next Session Focus:</h3>
-                            <ul className="text-xs text-slate-400 font-mono space-y-1">
-                                <li>> Verify L0/L1 Trend Alignment rigidly.</li>
-                                <li>> Obey the 10-Minute delay unconditionally.</li>
-                                <li>> Let price hit SL or TP. No early manual exits unless Friday 21:00.</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
+                ))}
+            </div>
+        );
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
-    </html>
+</html>
