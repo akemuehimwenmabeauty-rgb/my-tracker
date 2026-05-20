@@ -1,1 +1,280 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>THE FX SNIPER KITCHEN II</title>  <script src="https://cdn.tailwindcss.com"></script>  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>  <style>
+    body {
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow-x: hidden;
+    }
 
+    .glow {
+      box-shadow: 0 0 25px rgba(0,255,120,0.25);
+    }
+
+    .glass {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .gradient-bg {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at top, rgba(0,255,120,0.15), transparent 35%),
+        radial-gradient(circle at bottom, rgba(255,0,0,0.15), transparent 35%);
+      z-index: -1;
+    }
+  </style></head>
+<body>
+  <div class="gradient-bg"></div>
+  <div id="root"></div>  <script type="text/babel">
+    function App() {
+      const stats = [
+        ['Win Rate', '80%'],
+        ['R Total', '+5.98R'],
+        ['Balance', '$105.99'],
+        ['Trades', '5'],
+        ['Streak', '4 Wins'],
+        ['Progress', '5/50'],
+      ];
+
+      const trades = [
+        ['12 May', 'GBP/USD', '+1.5R'],
+        ['14 May', 'GBP/USD', '+1.5R'],
+        ['18 May', 'GBP/USD', '+1.5R'],
+        ['19 May', 'AUD/USD', '+1.5R'],
+      ];
+
+      return (
+        <div className="p-4 md:p-8 space-y-8">
+          <div className="glass rounded-3xl p-6 glow">
+            <div className="flex flex-col lg:flex-row justify-between gap-6 items-center">
+              <div>
+                <h1 className="text-4xl md:text-6xl font-black text-green-400">
+                  THE FX SNIPER KITCHEN II
+                </h1>
+
+                <p className="mt-4 text-gray-300 max-w-2xl">
+                  “Ponder the path of thy feet, and let all thy ways be established.” — Proverbs 4:26 📖⚖️
+                </p>
+
+                <div className="flex flex-wrap gap-3 mt-5">
+                  <div className="px-4 py-2 rounded-full bg-green-500/20 border border-green-500/30 text-green-300">
+                    ONE SHOT, ONE KILL! 💥
+                  </div>
+
+                  <div className="px-4 py-2 rounded-full bg-red-500/20 border border-red-500/30 text-red-300">
+                    ACTIVE DATE: Mon, May 11, 2026
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full lg:w-80 h-56 rounded-3xl border-2 border-dashed border-green-500/40 flex flex-col items-center justify-center glass">
+                <div className="text-5xl">📸</div>
+                <h2 className="text-green-300 font-bold mt-3">UPLOAD YOUR LOGO</h2>
+                <p className="text-xs text-gray-400 mt-2 text-center px-4">
+                  Upload the official FX SNIPER KITCHEN II logo here.
+                </p>
+                <input type="file" className="mt-4 text-sm" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+            {stats.map((item, index) => (
+              <div key={index} className="glass rounded-2xl p-5 glow hover:scale-105 transition duration-300">
+                <p className="text-gray-400 text-sm">{item[0]}</p>
+                <h2 className="text-3xl font-black text-green-400 mt-2">{item[1]}</h2>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 glass rounded-3xl p-6 glow">
+              <h2 className="text-3xl font-black text-green-400 mb-6">
+                📈 Trading Analytics
+              </h2>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-black/40 rounded-3xl h-72 flex flex-col items-center justify-center border border-green-500/20">
+                  <div className="w-40 h-40 rounded-full border-[18px] border-green-500 border-r-red-500 animate-spin"></div>
+                  <p className="mt-5 text-gray-300">Win/Loss Distribution</p>
+                </div>
+
+                <div className="bg-black/40 rounded-3xl h-72 p-5 flex items-end gap-2 border border-red-500/20">
+                  {[40,90,60,120,50,100,80].map((h,i)=>(
+                    <div key={i}
+                      style={{height:h+'px'}}
+                      className="w-full rounded-t-xl bg-gradient-to-t from-red-500 to-green-400">
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="glass rounded-3xl p-6 glow">
+              <h2 className="text-3xl font-black text-red-400 mb-5">
+                🤖 AI Coach
+              </h2>
+
+              <div className="space-y-4">
+                <div className="bg-black/40 rounded-2xl p-4 border border-green-500/20">
+                  <h3 className="font-bold text-green-300">Execution Feedback</h3>
+                  <p className="text-sm text-gray-300 mt-2">
+                    Elite discipline detected. Continue respecting ATR and ADX filters.
+                  </p>
+                </div>
+
+                <div className="bg-black/40 rounded-2xl p-4 border border-red-500/20">
+                  <h3 className="font-bold text-red-300">Risk Warning</h3>
+                  <p className="text-sm text-gray-300 mt-2">
+                    Avoid forcing setups during low-volatility sessions.
+                  </p>
+                </div>
+
+                <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-green-500 to-red-500 font-bold text-lg hover:scale-105 transition duration-300">
+                  Generate AI Session Review ⚡
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-6 mb-6">
+            <div className="glass rounded-3xl p-6 glow">
+              <h2 className="text-2xl font-black text-green-400 mb-5">🏆 Achievement Badges</h2>
+
+              <div className="grid grid-cols-2 gap-3">
+                {['First Extraction','4-Win Streak','Silent Ops','Veto Discipline'].map((badge,index)=>(
+                  <div key={index} className="bg-black/40 rounded-2xl border border-green-500/20 p-4 text-center">
+                    <div className="text-3xl">🔥</div>
+                    <p className="text-sm mt-2">{badge}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="glass rounded-3xl p-6 glow">
+              <h2 className="text-2xl font-black text-red-400 mb-5">📅 Profit Calendar</h2>
+
+              <div className="grid grid-cols-4 gap-2 text-sm">
+                {[
+                  ['11','$0','gray'],
+                  ['12','+$1.20','green'],
+                  ['13','$0','gray'],
+                  ['14','+$2.40','green'],
+                  ['15','-$0.01','red'],
+                  ['18','+$1.20','green'],
+                  ['19','+$1.20','green'],
+                  ['20','$0','gray']
+                ].map((day,index)=>(
+                  <div key={index}
+                    className={`rounded-2xl p-3 border ${day[2]==='green'?'bg-green-500/20 border-green-500/30':day[2]==='red'?'bg-red-500/20 border-red-500/30':'bg-white/5 border-white/10'}`}>
+                    <div className="font-bold">{day[0]}</div>
+                    <div className="text-xs mt-3">{day[1]}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="glass rounded-3xl p-6 glow">
+              <h2 className="text-2xl font-black text-green-400 mb-5">🧠 AI Session Focus</h2>
+
+              <div className="space-y-4">
+                <div className="bg-black/40 rounded-2xl border border-white/10 p-4">
+                  <p className="text-sm text-gray-300">
+                    Continue protecting capital during weak ATR sessions. No forced setups.
+                  </p>
+                </div>
+
+                <div className="bg-black/40 rounded-2xl border border-red-500/20 p-4">
+                  <p className="text-sm text-red-300">
+                    Warning: Emotional chart watching detected during live expansion candles.
+                  </p>
+                </div>
+
+                <button className="w-full py-3 rounded-2xl bg-gradient-to-r from-green-500 to-red-500 font-bold">
+                  Open AI Coach Terminal 🤖
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-6">
+            <div className="glass rounded-3xl p-6 glow">
+              <h2 className="text-3xl font-black text-green-400 mb-6">
+                📚 Trade Journal
+              </h2>
+
+              <div className="space-y-4">
+                {trades.map((trade,index)=>(
+                  <div key={index} className="bg-black/40 border border-white/10 rounded-2xl p-4">
+                    <div className="flex justify-between">
+                      <div>
+                        <h3 className="font-bold text-xl">{trade[0]}</h3>
+                        <p className="text-gray-400">{trade[1]}</p>
+                      </div>
+
+                      <div className="text-green-400 font-black text-xl">
+                        {trade[2]}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="glass rounded-3xl p-6 glow">
+              <h2 className="text-3xl font-black text-red-400 mb-6">
+                🎯 Goal Tracker
+              </h2>
+
+              <div className="space-y-5">
+                <div>
+                  <div className="flex justify-between mb-2 text-sm">
+                    <span>50 Surgical Extractions</span>
+                    <span>5/50</span>
+                  </div>
+
+                  <div className="h-5 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full w-[10%] bg-gradient-to-r from-green-400 to-green-600"></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between mb-2 text-sm">
+                    <span>Positive R Growth</span>
+                    <span>+5.98R</span>
+                  </div>
+
+                  <div className="h-5 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full w-[65%] bg-gradient-to-r from-red-500 to-green-500"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 bg-black/40 rounded-2xl border border-white/10 p-5">
+                <h3 className="text-xl font-bold text-green-300 mb-3">
+                  🔔 Smart Reminders
+                </h3>
+
+                <div className="space-y-2 text-gray-300 text-sm">
+                  <p>• Session Reminder</p>
+                  <p>• Journal Completion Alert</p>
+                  <p>• Weekly Review Reminder</p>
+                  <p>• Friday Cleanse Alert</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script></body>
+</html>
