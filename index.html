@@ -1,287 +1,87 @@
+import React, { useState } from 'react';
+import { Target, TrendingUp, BookOpen, Brain, Plus, Upload, Shield, Save } from 'lucide-react';
 
+const KitchenDashboard = () => {
+  const [logo, setLogo] = useState(null);
+  const [trades, setTrades] = useState([
+    { id: 1, pair: 'GBP/USD', result: '+1.5R', status: 'TP HIT' },
+    { id: 2, pair: 'AUD/USD', result: '+1.5R', status: 'TP HIT' }
+  ]);
+  const [showModal, setShowModal] = useState(false);
 
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) setLogo(URL.createObjectURL(file));
+  };
 
-  
-  
-  
-  
-  
-  
+  return (
+    <div className="min-h-screen bg-[#050506] text-[#E9E1D3] p-8 font-mono">
+      {/* Header */}
+      <header className="flex justify-between items-center border-b-2 border-[#B08D57] pb-8 mb-8">
+        <div className="flex items-center gap-6">
+          <div className="w-20 h-20 bg-[#14151A] border border-[#B08D57] flex items-center justify-center rounded-sm cursor-pointer hover:bg-[#1a1c22]">
+            {logo ? <img src={logo} className="w-full h-full object-cover" /> : <Upload className="text-[#B08D57]" />}
+            <input type="file" className="hidden" onChange={handleLogoUpload} id="logo-upload" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold tracking-tighter uppercase">THE FX SNIPER KITCHEN II</h1>
+            <p className="text-[#B08D57] tracking-widest text-xs uppercase">One Shot, One Kill 💥</p>
+          </div>
+        </div>
+        <button 
+          onClick={() => setShowModal(true)}
+          className="bg-[#B08D57] text-[#050506] px-6 py-3 font-bold flex items-center gap-2 hover:bg-[#E3C66A] transition-all"
+        >
+          <Plus size={20} /> LOG EXTRACTION
+        </button>
+      </header>
 
+      {/* Main Grid */}
+      <div className="grid grid-cols-4 gap-6">
+        <div className="col-span-3 bg-[#14151A] p-6 border border-[#2F323A]">
+          <h2 className="text-[#B08D57] mb-4 uppercase text-sm border-b border-[#2F323A] pb-2">Active Journal</h2>
+          <table className="w-full text-left">
+            <thead>
+              <tr className="text-[#666] text-xs">
+                <th>PAIR</th>
+                <th>RESULT</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trades.map(t => (
+                <tr key={t.id} className="border-b border-[#2F323A]">
+                  <td className="py-4">{t.pair}</td>
+                  <td className="text-[#E3C66A]">{t.result}</td>
+                  <td className="text-[#10B981]">{t.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
+        {/* Side Panel */}
+        <div className="space-y-6">
+          <div className="bg-[#14151A] p-6 border border-[#2F323A]">
+            <Brain className="text-[#E3C66A] mb-2" />
+            <h3 className="font-bold mb-2">AI COACH</h3>
+            <p className="text-xs leading-relaxed text-[#666]">Current R-Total: +5.98R. Maintain the 1-Loss rule. Your discipline is high.</p>
+          </div>
+        </div>
+      </div>
 
-
-  
-
-
-<div class="flex flex-col lg:flex-row justify-between gap-6 items-center">
-
-  <div>
-    <h1 class="text-4xl md:text-6xl font-black neon text-green-400">
-      THE FX SNIPER KITCHEN II 🔥
-    </h1>
-
-    <p class="text-gray-300 mt-4 text-lg">
-      "Ponder the path of thy feet, and let all thy ways be established." — Proverbs 4:26 📖⚖️
-    </p>
-
-    <p class="mt-3 text-red-400 font-bold text-xl">
-      ONE SHOT, ONE KILL! 💥
-    </p>
-  </div>
-
-  <div class="glass rounded-3xl p-5 w-full max-w-sm text-center glow-red">
-    <h2 class="text-2xl font-bold mb-4">🖼️ Upload Kitchen Logo</h2>
-
-    <input type="file" class="w-full bg-black p-3 rounded-xl border border-green-500/20" />
-
-    <div class="mt-4 border-2 border-dashed border-green-500/30 rounded-2xl h-40 flex items-center justify-center text-gray-400">
-      FX SNIPER LOGO PREVIEW
+      {/* Journal Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center">
+          <div className="bg-[#14151A] p-8 border-2 border-[#B08D57] w-96">
+            <h2 className="text-2xl font-bold mb-6 uppercase">New Extraction</h2>
+            <input className="w-full bg-[#050506] border border-[#2F323A] p-3 mb-4 text-white" placeholder="Pair (e.g. GBP/USD)" />
+            <button onClick={() => setShowModal(false)} className="w-full bg-[#B08D57] py-3 text-black font-bold">SUBMIT</button>
+          </div>
+        </div>
+      )}
     </div>
-  </div>
+  );
+};
 
-</div>
-
-
-  
-
-  
-
-
-<div class="glass rounded-3xl p-5 glow-green">
-  <p class="text-gray-400">Demo Balance</p>
-  <h2 class="text-4xl font-black text-green-400">$105.99</h2>
-</div>
-
-<div class="glass rounded-3xl p-5 glow-green">
-  <p class="text-gray-400">Current R</p>
-  <h2 class="text-4xl font-black text-green-400">+5.98R</h2>
-</div>
-
-<div class="glass rounded-3xl p-5 glow-red">
-  <p class="text-gray-400">Win Rate</p>
-  <h2 class="text-4xl font-black text-red-400">80%</h2>
-</div>
-
-<div class="glass rounded-3xl p-5 glow-green">
-  <p class="text-gray-400">Progress</p>
-  <h2 class="text-4xl font-black text-green-400">5 / 50</h2>
-</div>
-
-
-  
-
-  
-
-
-<div class="glass rounded-3xl p-6">
-  <h2 class="text-2xl font-black text-green-400 mb-5">📈 Account Growth</h2>
-  <canvas id="growthChart"></canvas>
-</div>
-
-<div class="glass rounded-3xl p-6">
-  <h2 class="text-2xl font-black text-red-400 mb-5">📊 Win / Veto Distribution</h2>
-  <canvas id="pieChart"></canvas>
-</div>
-
-
-  
-
-  
-
-
-<div class="glass rounded-3xl p-6">
-  <h2 class="text-2xl font-black text-green-400 mb-5">🤖 AI Coach</h2>
-
-  <div class="space-y-4">
-
-    <div class="bg-black/40 p-4 rounded-2xl border border-green-500/20">
-      ✅ Discipline remains elite during veto conditions.
-    </div>
-
-    <div class="bg-black/40 p-4 rounded-2xl border border-red-500/20">
-      ⚠️ Chart watching behavior detected during active trades.
-    </div>
-
-    <div class="bg-black/40 p-4 rounded-2xl border border-white/10">
-      🎯 Next Session Focus: Continue respecting ATR & ADX filters.
-    </div>
-
-  </div>
-</div>
-
-
-<div class="glass rounded-3xl p-6">
-  <h2 class="text-2xl font-black text-red-400 mb-5">🏆 Achievement Badges</h2>
-
-  <div class="grid grid-cols-2 gap-4">
-
-    <div class="bg-black/40 rounded-2xl p-4 text-center border border-green-500/20">
-      🔥<br/> First Extraction
-    </div>
-
-    <div class="bg-black/40 rounded-2xl p-4 text-center border border-green-500/20">
-      🛡️<br/> Veto Discipline
-    </div>
-
-    <div class="bg-black/40 rounded-2xl p-4 text-center border border-green-500/20">
-      🎯<br/> Surgical Entry
-    </div>
-
-    <div class="bg-black/40 rounded-2xl p-4 text-center border border-green-500/20">
-      📈<br/> +5R Milestone
-    </div>
-
-  </div>
-</div>
-
-
-<div class="glass rounded-3xl p-6">
-  <h2 class="text-2xl font-black text-green-400 mb-5">🎯 Goal Tracker</h2>
-
-  <textarea class="w-full h-48 bg-black rounded-2xl p-4 border border-green-500/20">
-
-
-
-Goal 1: Reach 50 Surgical Extractions
-Goal 2: Maintain positive R total
-Goal 3: Build prop-firm discipline
-Goal 4: Eliminate emotional chart watching
-
-
-
-
-  
-
-  
-
-
-<h2 class="text-3xl font-black text-green-400 mb-6">📔 Trade Journal</h2>
-
-<table class="w-full text-sm min-w-[900px]">
-  <thead>
-    <tr class="text-green-400 border-b border-green-500/20">
-      <th class="text-left py-3">Day</th>
-      <th class="text-left">Pair</th>
-      <th class="text-left">Direction</th>
-      <th class="text-left">Result</th>
-      <th class="text-left">Profit</th>
-      <th class="text-left">Emotion</th>
-      <th class="text-left">Notes</th>
-    </tr>
-  </thead>
-
-  <tbody>
-
-    <tr class="border-b border-white/5">
-      <td class="py-4">Day 2</td>
-      <td>GBP/USD</td>
-      <td>SELL</td>
-      <td class="text-green-400">TP HIT</td>
-      <td>+$1.20</td>
-      <td>Disciplined</td>
-      <td>Obeyed FOMC veto before execution</td>
-    </tr>
-
-    <tr class="border-b border-white/5">
-      <td class="py-4">Day 4</td>
-      <td>GBP/USD</td>
-      <td>SELL</td>
-      <td class="text-green-400">TP HIT</td>
-      <td>+$2.40</td>
-      <td>Calm</td>
-      <td>Excellent recalibration discipline</td>
-    </tr>
-
-    <tr class="border-b border-white/5">
-      <td class="py-4">Day 5</td>
-      <td>EUR/GBP</td>
-      <td>BUY</td>
-      <td class="text-yellow-400">Scratch</td>
-      <td>-$0.01</td>
-      <td>Controlled</td>
-      <td>Weekend Purge respected</td>
-    </tr>
-
-    <tr>
-      <td class="py-4">Day 7</td>
-      <td>AUD/USD</td>
-      <td>SELL</td>
-      <td class="text-green-400">TP HIT</td>
-      <td>+$1.20</td>
-      <td>Cold & Focused</td>
-      <td>Perfect bearish cascade execution</td>
-    </tr>
-
-  </tbody>
-</table>
-
-
-  
-
-  
-
-
-<div class="glass rounded-3xl p-6">
-  <h2 class="text-2xl font-black text-red-400 mb-5">📅 Profit Calendar</h2>
-
-  <div class="grid grid-cols-4 gap-3">
-
-    <div class="bg-gray-700 rounded-2xl p-4">11<br>$0</div>
-    <div class="bg-green-500/20 rounded-2xl p-4">12<br>+$1.20</div>
-    <div class="bg-gray-700 rounded-2xl p-4">13<br>$0</div>
-    <div class="bg-green-500/20 rounded-2xl p-4">14<br>+$2.40</div>
-    <div class="bg-red-500/20 rounded-2xl p-4">15<br>-$0.01</div>
-    <div class="bg-green-500/20 rounded-2xl p-4">18<br>+$1.20</div>
-    <div class="bg-green-500/20 rounded-2xl p-4">19<br>+$1.20</div>
-    <div class="bg-gray-700 rounded-2xl p-4">20<br>$0</div>
-
-  </div>
-</div>
-
-
-<div class="glass rounded-3xl p-6">
-  <h2 class="text-2xl font-black text-green-400 mb-5">🔔 Smart Reminder System</h2>
-
-  <div class="space-y-4">
-
-    <div class="bg-black/40 p-4 rounded-2xl border border-green-500/20">
-      ⏰ Reminder: Thursday Session opens at 15:30 WAT
-    </div>
-
-    <div class="bg-black/40 p-4 rounded-2xl border border-red-500/20">
-      📔 Journal all unfinished trades before sleep
-    </div>
-
-    <div class="bg-black/40 p-4 rounded-2xl border border-white/10">
-      📊 Saturday Weekly Debrief pending
-    </div>
-
-  </div>
-</div>
-
-
-  
-
-  
-
-    
-📜 FX SNIPER OPERATIONAL CODE
-
-
-<div class="space-y-4 text-gray-300 leading-8">
-  <p>✅ Alpha handles structural direction and SL/TP mathematics.</p>
-  <p>✅ Beta protects capital through environmental veto systems.</p>
-  <p>✅ One Shot. One Kill. One Trade Per Day.</p>
-  <p>✅ ATR & ADX thresholds mandatory.</p>
-  <p>✅ No emotional interference after execution.</p>
-  <p>✅ Friday Purge Rule enforced before weekend exposure.</p>
-</div>
-
-
-  
-
-
-
-
-
+export default KitchenDashboard;
