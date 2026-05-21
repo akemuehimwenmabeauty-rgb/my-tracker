@@ -1,220 +1,287 @@
-<!DOCTYPE html><html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>THE FX SNIPER KITCHEN II</title>  <script src="https://cdn.tailwindcss.com"></script>  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>  <style>
-    body {
-      margin: 0;
-      background: black;
-      color: white;
-      font-family: Arial, sans-serif;
-      overflow-x: hidden;
-    }
 
-    .glow {
-      box-shadow: 0 0 25px rgba(0,255,120,0.25);
-    }
 
-    .glass {
-      background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.08);
-    }
 
-    .gradient-bg {
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(circle at top, rgba(0,255,120,0.15), transparent 35%),
-        radial-gradient(circle at bottom, rgba(255,0,0,0.15), transparent 35%);
-      z-index: -1;
-    }
-  </style></head>
-<body>
-  <div class="gradient-bg"></div>
-  <div id="root"></div>  <script type="text/babel">
-    function App() {
-      const stats = [
-        ['Win Rate', '80%'],
-        ['R Total', '+5.98R'],
-        ['Balance', '$105.99'],
-        ['Trades', '5'],
-        ['Streak', '4 Wins'],
-        ['Progress', '5/50'],
-      ];
+  
+  
+  
+  
+  
+  
 
-      const trades = [
-        ['12 May', 'GBP/USD', '+1.5R'],
-        ['14 May', 'GBP/USD', '+1.5R'],
-        ['18 May', 'GBP/USD', '+1.5R'],
-        ['19 May', 'AUD/USD', '+1.5R'],
-      ];
 
-      return (
-        <div className="p-4 md:p-8 space-y-8">
-          <div className="glass rounded-3xl p-6 glow">
-            <div className="flex flex-col lg:flex-row justify-between gap-6 items-center">
-              <div>
-                <h1 className="text-4xl md:text-6xl font-black text-green-400">
-                  THE FX SNIPER KITCHEN II
-                </h1>
 
-                <p className="mt-4 text-gray-300 max-w-2xl">
-                  “Ponder the path of thy feet, and let all thy ways be established.” — Proverbs 4:26 📖⚖️
-                </p>
 
-                <div className="flex flex-wrap gap-3 mt-5">
-                  <div className="px-4 py-2 rounded-full bg-green-500/20 border border-green-500/30 text-green-300">
-                    ONE SHOT, ONE KILL! 💥
-                  </div>
+  
 
-                  <div className="px-4 py-2 rounded-full bg-red-500/20 border border-red-500/30 text-red-300">
-                    ACTIVE DATE: Mon, May 11, 2026
-                  </div>
-                </div>
-              </div>
 
-              <div className="w-full lg:w-80 h-56 rounded-3xl border-2 border-dashed border-green-500/40 flex flex-col items-center justify-center glass">
-                <div className="text-5xl">📸</div>
-                <h2 className="text-green-300 font-bold mt-3">UPLOAD YOUR LOGO</h2>
-                <p className="text-xs text-gray-400 mt-2 text-center px-4">
-                  Upload the official FX SNIPER KITCHEN II logo here.
-                </p>
-                <input type="file" className="mt-4 text-sm" />
-              </div>
-            </div>
-          </div>
+<div class="flex flex-col lg:flex-row justify-between gap-6 items-center">
 
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-            {stats.map((item, index) => (
-              <div key={index} className="glass rounded-2xl p-5 glow hover:scale-105 transition duration-300">
-                <p className="text-gray-400 text-sm">{item[0]}</p>
-                <h2 className="text-3xl font-black text-green-400 mt-2">{item[1]}</h2>
-              </div>
-            ))}
-          </div>
+  <div>
+    <h1 class="text-4xl md:text-6xl font-black neon text-green-400">
+      THE FX SNIPER KITCHEN II 🔥
+    </h1>
 
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 glass rounded-3xl p-6 glow">
-              <h2 className="text-3xl font-black text-green-400 mb-6">
-                📈 Trading Analytics
-              </h2>
+    <p class="text-gray-300 mt-4 text-lg">
+      "Ponder the path of thy feet, and let all thy ways be established." — Proverbs 4:26 📖⚖️
+    </p>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-black/40 rounded-3xl h-72 flex flex-col items-center justify-center border border-green-500/20">
-                  <div className="w-40 h-40 rounded-full border-[18px] border-green-500 border-r-red-500 animate-spin"></div>
-                  <p className="mt-5 text-gray-300">Win/Loss Distribution</p>
-                </div>
+    <p class="mt-3 text-red-400 font-bold text-xl">
+      ONE SHOT, ONE KILL! 💥
+    </p>
+  </div>
 
-                <div className="bg-black/40 rounded-3xl h-72 p-5 flex items-end gap-2 border border-red-500/20">
-                  {[40,90,60,120,50,100,80].map((h,i)=>(
-                    <div key={i}
-                      style={{height:h+'px'}}
-                      className="w-full rounded-t-xl bg-gradient-to-t from-red-500 to-green-400">
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+  <div class="glass rounded-3xl p-5 w-full max-w-sm text-center glow-red">
+    <h2 class="text-2xl font-bold mb-4">🖼️ Upload Kitchen Logo</h2>
 
-            <div className="glass rounded-3xl p-6 glow">
-              <h2 className="text-3xl font-black text-red-400 mb-5">
-                🤖 AI Coach
-              </h2>
+    <input type="file" class="w-full bg-black p-3 rounded-xl border border-green-500/20" />
 
-              <div className="space-y-4">
-                <div className="bg-black/40 rounded-2xl p-4 border border-green-500/20">
-                  <h3 className="font-bold text-green-300">Execution Feedback</h3>
-                  <p className="text-sm text-gray-300 mt-2">
-                    Elite discipline detected. Continue respecting ATR and ADX filters.
-                  </p>
-                </div>
+    <div class="mt-4 border-2 border-dashed border-green-500/30 rounded-2xl h-40 flex items-center justify-center text-gray-400">
+      FX SNIPER LOGO PREVIEW
+    </div>
+  </div>
 
-                <div className="bg-black/40 rounded-2xl p-4 border border-red-500/20">
-                  <h3 className="font-bold text-red-300">Risk Warning</h3>
-                  <p className="text-sm text-gray-300 mt-2">
-                    Avoid forcing setups during low-volatility sessions.
-                  </p>
-                </div>
+</div>
 
-                <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-green-500 to-red-500 font-bold text-lg hover:scale-105 transition duration-300">
-                  Generate AI Session Review ⚡
-                </button>
-              </div>
-            </div>
-          </div>
 
-          <div className="grid lg:grid-cols-2 gap-6">
-            <div className="glass rounded-3xl p-6 glow">
-              <h2 className="text-3xl font-black text-green-400 mb-6">
-                📚 Trade Journal
-              </h2>
+  
 
-              <div className="space-y-4">
-                {trades.map((trade,index)=>(
-                  <div key={index} className="bg-black/40 border border-white/10 rounded-2xl p-4">
-                    <div className="flex justify-between">
-                      <div>
-                        <h3 className="font-bold text-xl">{trade[0]}</h3>
-                        <p className="text-gray-400">{trade[1]}</p>
-                      </div>
+  
 
-                      <div className="text-green-400 font-black text-xl">
-                        {trade[2]}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            <div className="glass rounded-3xl p-6 glow">
-              <h2 className="text-3xl font-black text-red-400 mb-6">
-                🎯 Goal Tracker
-              </h2>
+<div class="glass rounded-3xl p-5 glow-green">
+  <p class="text-gray-400">Demo Balance</p>
+  <h2 class="text-4xl font-black text-green-400">$105.99</h2>
+</div>
 
-              <div className="space-y-5">
-                <div>
-                  <div className="flex justify-between mb-2 text-sm">
-                    <span>50 Surgical Extractions</span>
-                    <span>5/50</span>
-                  </div>
+<div class="glass rounded-3xl p-5 glow-green">
+  <p class="text-gray-400">Current R</p>
+  <h2 class="text-4xl font-black text-green-400">+5.98R</h2>
+</div>
 
-                  <div className="h-5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full w-[10%] bg-gradient-to-r from-green-400 to-green-600"></div>
-                  </div>
-                </div>
+<div class="glass rounded-3xl p-5 glow-red">
+  <p class="text-gray-400">Win Rate</p>
+  <h2 class="text-4xl font-black text-red-400">80%</h2>
+</div>
 
-                <div>
-                  <div className="flex justify-between mb-2 text-sm">
-                    <span>Positive R Growth</span>
-                    <span>+5.98R</span>
-                  </div>
+<div class="glass rounded-3xl p-5 glow-green">
+  <p class="text-gray-400">Progress</p>
+  <h2 class="text-4xl font-black text-green-400">5 / 50</h2>
+</div>
 
-                  <div className="h-5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full w-[65%] bg-gradient-to-r from-red-500 to-green-500"></div>
-                  </div>
-                </div>
-              </div>
 
-              <div className="mt-8 bg-black/40 rounded-2xl border border-white/10 p-5">
-                <h3 className="text-xl font-bold text-green-300 mb-3">
-                  🔔 Smart Reminders
-                </h3>
+  
 
-                <div className="space-y-2 text-gray-300 text-sm">
-                  <p>• Session Reminder</p>
-                  <p>• Journal Completion Alert</p>
-                  <p>• Weekly Review Reminder</p>
-                  <p>• Friday Cleanse Alert</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
+  
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script></body>
-</html>
+
+<div class="glass rounded-3xl p-6">
+  <h2 class="text-2xl font-black text-green-400 mb-5">📈 Account Growth</h2>
+  <canvas id="growthChart"></canvas>
+</div>
+
+<div class="glass rounded-3xl p-6">
+  <h2 class="text-2xl font-black text-red-400 mb-5">📊 Win / Veto Distribution</h2>
+  <canvas id="pieChart"></canvas>
+</div>
+
+
+  
+
+  
+
+
+<div class="glass rounded-3xl p-6">
+  <h2 class="text-2xl font-black text-green-400 mb-5">🤖 AI Coach</h2>
+
+  <div class="space-y-4">
+
+    <div class="bg-black/40 p-4 rounded-2xl border border-green-500/20">
+      ✅ Discipline remains elite during veto conditions.
+    </div>
+
+    <div class="bg-black/40 p-4 rounded-2xl border border-red-500/20">
+      ⚠️ Chart watching behavior detected during active trades.
+    </div>
+
+    <div class="bg-black/40 p-4 rounded-2xl border border-white/10">
+      🎯 Next Session Focus: Continue respecting ATR & ADX filters.
+    </div>
+
+  </div>
+</div>
+
+
+<div class="glass rounded-3xl p-6">
+  <h2 class="text-2xl font-black text-red-400 mb-5">🏆 Achievement Badges</h2>
+
+  <div class="grid grid-cols-2 gap-4">
+
+    <div class="bg-black/40 rounded-2xl p-4 text-center border border-green-500/20">
+      🔥<br/> First Extraction
+    </div>
+
+    <div class="bg-black/40 rounded-2xl p-4 text-center border border-green-500/20">
+      🛡️<br/> Veto Discipline
+    </div>
+
+    <div class="bg-black/40 rounded-2xl p-4 text-center border border-green-500/20">
+      🎯<br/> Surgical Entry
+    </div>
+
+    <div class="bg-black/40 rounded-2xl p-4 text-center border border-green-500/20">
+      📈<br/> +5R Milestone
+    </div>
+
+  </div>
+</div>
+
+
+<div class="glass rounded-3xl p-6">
+  <h2 class="text-2xl font-black text-green-400 mb-5">🎯 Goal Tracker</h2>
+
+  <textarea class="w-full h-48 bg-black rounded-2xl p-4 border border-green-500/20">
+
+
+
+Goal 1: Reach 50 Surgical Extractions
+Goal 2: Maintain positive R total
+Goal 3: Build prop-firm discipline
+Goal 4: Eliminate emotional chart watching
+
+
+
+
+  
+
+  
+
+
+<h2 class="text-3xl font-black text-green-400 mb-6">📔 Trade Journal</h2>
+
+<table class="w-full text-sm min-w-[900px]">
+  <thead>
+    <tr class="text-green-400 border-b border-green-500/20">
+      <th class="text-left py-3">Day</th>
+      <th class="text-left">Pair</th>
+      <th class="text-left">Direction</th>
+      <th class="text-left">Result</th>
+      <th class="text-left">Profit</th>
+      <th class="text-left">Emotion</th>
+      <th class="text-left">Notes</th>
+    </tr>
+  </thead>
+
+  <tbody>
+
+    <tr class="border-b border-white/5">
+      <td class="py-4">Day 2</td>
+      <td>GBP/USD</td>
+      <td>SELL</td>
+      <td class="text-green-400">TP HIT</td>
+      <td>+$1.20</td>
+      <td>Disciplined</td>
+      <td>Obeyed FOMC veto before execution</td>
+    </tr>
+
+    <tr class="border-b border-white/5">
+      <td class="py-4">Day 4</td>
+      <td>GBP/USD</td>
+      <td>SELL</td>
+      <td class="text-green-400">TP HIT</td>
+      <td>+$2.40</td>
+      <td>Calm</td>
+      <td>Excellent recalibration discipline</td>
+    </tr>
+
+    <tr class="border-b border-white/5">
+      <td class="py-4">Day 5</td>
+      <td>EUR/GBP</td>
+      <td>BUY</td>
+      <td class="text-yellow-400">Scratch</td>
+      <td>-$0.01</td>
+      <td>Controlled</td>
+      <td>Weekend Purge respected</td>
+    </tr>
+
+    <tr>
+      <td class="py-4">Day 7</td>
+      <td>AUD/USD</td>
+      <td>SELL</td>
+      <td class="text-green-400">TP HIT</td>
+      <td>+$1.20</td>
+      <td>Cold & Focused</td>
+      <td>Perfect bearish cascade execution</td>
+    </tr>
+
+  </tbody>
+</table>
+
+
+  
+
+  
+
+
+<div class="glass rounded-3xl p-6">
+  <h2 class="text-2xl font-black text-red-400 mb-5">📅 Profit Calendar</h2>
+
+  <div class="grid grid-cols-4 gap-3">
+
+    <div class="bg-gray-700 rounded-2xl p-4">11<br>$0</div>
+    <div class="bg-green-500/20 rounded-2xl p-4">12<br>+$1.20</div>
+    <div class="bg-gray-700 rounded-2xl p-4">13<br>$0</div>
+    <div class="bg-green-500/20 rounded-2xl p-4">14<br>+$2.40</div>
+    <div class="bg-red-500/20 rounded-2xl p-4">15<br>-$0.01</div>
+    <div class="bg-green-500/20 rounded-2xl p-4">18<br>+$1.20</div>
+    <div class="bg-green-500/20 rounded-2xl p-4">19<br>+$1.20</div>
+    <div class="bg-gray-700 rounded-2xl p-4">20<br>$0</div>
+
+  </div>
+</div>
+
+
+<div class="glass rounded-3xl p-6">
+  <h2 class="text-2xl font-black text-green-400 mb-5">🔔 Smart Reminder System</h2>
+
+  <div class="space-y-4">
+
+    <div class="bg-black/40 p-4 rounded-2xl border border-green-500/20">
+      ⏰ Reminder: Thursday Session opens at 15:30 WAT
+    </div>
+
+    <div class="bg-black/40 p-4 rounded-2xl border border-red-500/20">
+      📔 Journal all unfinished trades before sleep
+    </div>
+
+    <div class="bg-black/40 p-4 rounded-2xl border border-white/10">
+      📊 Saturday Weekly Debrief pending
+    </div>
+
+  </div>
+</div>
+
+
+  
+
+  
+
+    
+📜 FX SNIPER OPERATIONAL CODE
+
+
+<div class="space-y-4 text-gray-300 leading-8">
+  <p>✅ Alpha handles structural direction and SL/TP mathematics.</p>
+  <p>✅ Beta protects capital through environmental veto systems.</p>
+  <p>✅ One Shot. One Kill. One Trade Per Day.</p>
+  <p>✅ ATR & ADX thresholds mandatory.</p>
+  <p>✅ No emotional interference after execution.</p>
+  <p>✅ Friday Purge Rule enforced before weekend exposure.</p>
+</div>
+
+
+  
+
+
+
+
+
