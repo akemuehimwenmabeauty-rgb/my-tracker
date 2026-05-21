@@ -1,87 +1,830 @@
-import React, { useState } from 'react';
-import { Target, TrendingUp, BookOpen, Brain, Plus, Upload, Shield, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  TrendingUp, Shield, Target, Calendar, Brain, Award, 
+  Settings, FileText, Bell, Plus, Filter, Upload, 
+  ChevronRight, Volume2, VolumeX, AlertTriangle, CheckCircle2, 
+  XCircle, Zap, Crosshair, DollarSign, Activity, BookOpen
+} from 'lucide-react';
 
-const KitchenDashboard = () => {
+// --- INITIAL HISTORICAL DATA FROM THE CXO JOURNAL ---
+const INITIAL_TRADES = [
+  { id: 1, date: '2026-05-11', pair: 'GBP/USD', direction: 'BUY', result: 'VETO', pips: 0, profit: 0, rValue: 0, note: 'Beta L9 Veto: DXY Spiking & L7 Gravity conflict.', emotionBefore: 'Anxious', emotionAfter: 'Relieved', phase: 'M5 ADX > 25' },
+  { id: 2, date: '2026-05-12', pair: 'GBP/USD', direction: 'SELL', result: 'VETO', pips: 0, profit: 0, rValue: 0, note: 'Beta Temporal Veto: FOMC News Proximity.', emotionBefore: 'Eager', emotionAfter: 'Disciplined', phase: 'FOMC Proximity' },
+  { id: 3, date: '2026-05-12', pair: 'GBP/USD', direction: 'SELL', result: 'WIN', pips: 12, profit: 1.20, rValue: 1.5, note: 'Surgical entry at 08:40 WAT. Hit TP in 5 mins.', emotionBefore: 'Tempted', emotionAfter: 'Confident', phase: 'Alpha Alignment' },
+  { id: 4, date: '2026-05-13', pair: 'GBP/USD', direction: 'NONE', result: 'VETO', pips: 0, profit: 0, rValue: 0, note: 'Alpha Veto: Clear structural fog & toxic M15 wicks.', emotionBefore: 'Restless', emotionAfter: 'Calm', phase: 'Structure Check' },
+  { id: 5, date: '2026-05-13', pair: 'GBP/USD', direction: 'NONE', result: 'VETO', pips: 0, profit: 0, rValue: 0, note: 'Alpha Veto: Dying momentum + upcoming Euro GDP.', emotionBefore: 'Bored', emotionAfter: 'Grounded', phase: 'Momentum Check' },
+  { id: 6, date: '2026-05-14', pair: 'AUD/USD', direction: 'SELL', result: 'VETO', pips: 0, profit: 0, rValue: 0, note: 'Beta L4 Veto: Weak-bodied corrective pullback.', emotionBefore: 'Calm', emotionAfter: 'Patient', phase: 'Candle Structure' },
+  { id: 7, date: '2026-05-14', pair: 'GBP/USD', direction: 'SELL', result: 'WIN', pips: 24, profit: 2.40, rValue: 1.5, note: 'Heavy slippage triggered Recalibration Protocol. Perfect defense.', emotionBefore: 'Focused', emotionAfter: 'Elated', phase: 'Recalibration' },
+  { id: 8, date: '2026-05-15', pair: 'EUR/GBP', direction: 'BUY', result: 'VETO', pips: 0, profit: 0, rValue: 0, note: 'Alpha L8 Veto: Buying into a live Friday wick wall.', emotionBefore: 'Neutral', emotionAfter: 'Protected', phase: 'Wick Exhaustion' },
+  { id: 9, date: '2026-05-15', pair: 'EUR/GBP', direction: 'BUY', result: 'SCRATCH', pips: 0, profit: -0.01, rValue: -0.02, note: 'Friday Purge Protocol forced close at 20:59 WAT due to low liquidity.', emotionBefore: 'Curious', emotionAfter: 'Controlled', phase: 'Purge Protocol' },
+  { id: 10, date: '2026-05-18', pair: 'GBP/USD', direction: 'BUY', result: 'WIN', pips: 12, profit: 1.20, rValue: 1.5, note: 'Dynamic Re-Synchronization deployed. Watched live candles.', emotionBefore: 'Disciplined', emotionAfter: 'Focused', phase: 'Dynamic Sync' },
+  { id: 11, date: '2026-05-19', pair: 'GBP/USD', direction: 'SELL', result: 'VETO', pips: 0, profit: 0, rValue: 0, note: 'Alpha L1 Veto: M5 bearish vs M15 macro bullish fortress.', emotionBefore: 'Steady', emotionAfter: 'Safe', phase: 'Directional Lock' },
+  { id: 12, date: '2026-05-19', pair: 'AUD/USD', direction: 'SELL', result: 'WIN', pips: 12, profit: 1.20, rValue: 1.5, note: 'Milestone 1 Shattered! Controlled institutional bearish cascade.', emotionBefore: 'Calm', emotionAfter: 'Invincible', phase: 'Milestone Drop' },
+  { id: 13, date: '2026-05-20', pair: 'ALL', direction: 'NONE', result: 'VETO', pips: 0, profit: 0, rValue: 0, note: 'CXO Environmental Veto: Lack of institutional clarity/ATR.', emotionBefore: 'Tempted', emotionAfter: 'Grounded', phase: 'Capital Preservation' }
+];
+
+export default function App() {
+  // --- UI & CORE STATES ---
+  const [activeTab, setActiveTab] = useState('Overview');
+  const [trades, setTrades] = useState(INITIAL_TRADES);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [logo, setLogo] = useState(null);
-  const [trades, setTrades] = useState([
-    { id: 1, pair: 'GBP/USD', result: '+1.5R', status: 'TP HIT' },
-    { id: 2, pair: 'AUD/USD', result: '+1.5R', status: 'TP HIT' }
-  ]);
-  const [showModal, setShowModal] = useState(false);
+  const [filterPair, setFilterPair] = useState('ALL');
+  
+  // --- REAL-TIME EDITABLE GOAL TRACKER STATE ---
+  const [goals, setGoals] = useState({
+    targetR: 50.0,
+    targetCash: 200.0,
+    currentPhase: 'PHASE 0 (The Lab)'
+  });
 
+  // --- NEW JOURNAL INPUT STATE ---
+  const [newTrade, setNewTrade] = useState({
+    date: new Date().toISOString().split('T')[0],
+    pair: 'GBP/USD',
+    direction: 'BUY',
+    result: 'WIN',
+    profit: '',
+    rValue: '',
+    note: '',
+    emotionBefore: 'Calm',
+    emotionAfter: 'Focused'
+  });
+
+  // --- AUDIO HELPER MECHANISM ---
+  const playUISound = (type) => {
+    if (!soundEnabled) return;
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    if (type === 'success') {
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(587.33, audioContext.currentTime); // D5
+      oscillator.frequency.setValueAtTime(880, audioContext.currentTime + 0.1); // A5
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.25);
+    } else if (type === 'veto') {
+      oscillator.type = 'triangle';
+      oscillator.frequency.setValueAtTime(220, audioContext.currentTime); // A3
+      gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.15);
+    } else {
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
+      gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.08);
+    }
+  };
+
+  // --- LOGO UPLOAD HANDLER ---
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
-    if (file) setLogo(URL.createObjectURL(file));
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogo(reader.result);
+        playUISound('success');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // --- COMPUTE REAL-TIME ANALYTICS FROM LIVE DATA ARRAY ---
+  const totalStrikesAttempted = trades.length;
+  const liveExtractions = trades.filter(t => t.result === 'WIN' || t.result === 'LOSS' || t.result === 'SCRATCH');
+  const totalWins = trades.filter(t => t.result === 'WIN').length;
+  const totalLosses = trades.filter(t => t.result === 'LOSS').length;
+  const totalVetoes = trades.filter(t => t.result === 'VETO').length;
+  
+  const winRate = liveExtractions.length > 0 ? ((totalWins / liveExtractions.length) * 100).toFixed(1) : '0.0';
+  const currentRTotal = trades.reduce((sum, t) => sum + Number(t.rValue), 0).toFixed(2);
+  const calculatedBalance = trades.reduce((sum, t) => sum + Number(t.profit), 100.00).toFixed(2);
+  
+  // Dynamic Streak Calculation
+  let currentStreak = 0;
+  for (let i = trades.length - 1; i >= 0; i--) {
+    if (trades[i].result === 'WIN') currentStreak++;
+    else if (trades[i].result === 'LOSS') break;
+  }
+
+  const handleAddTrade = (e) => {
+    e.preventDefault();
+    const formatted = {
+      ...newTrade,
+      id: trades.length + 1,
+      profit: Number(newTrade.profit) || 0,
+      rValue: Number(newTrade.rValue) || 0
+    };
+    setTrades([...trades, formatted]);
+    playUISound(formatted.result === 'WIN' ? 'success' : 'veto');
+    setNewTrade({
+      date: new Date().toISOString().split('T')[0],
+      pair: 'GBP/USD',
+      direction: 'BUY',
+      result: 'WIN',
+      profit: '',
+      rValue: '',
+      note: '',
+      emotionBefore: 'Calm',
+      emotionAfter: 'Focused'
+    });
   };
 
   return (
-    <div className="min-h-screen bg-[#050506] text-[#E9E1D3] p-8 font-mono">
-      {/* Header */}
-      <header className="flex justify-between items-center border-b-2 border-[#B08D57] pb-8 mb-8">
-        <div className="flex items-center gap-6">
-          <div className="w-20 h-20 bg-[#14151A] border border-[#B08D57] flex items-center justify-center rounded-sm cursor-pointer hover:bg-[#1a1c22]">
-            {logo ? <img src={logo} className="w-full h-full object-cover" /> : <Upload className="text-[#B08D57]" />}
-            <input type="file" className="hidden" onChange={handleLogoUpload} id="logo-upload" />
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-amber-500/30 selection:text-amber-400">
+      
+      {/* HEADER HUD */}
+      <header className="border-b border-slate-900 bg-slate-900/60 backdrop-blur-xl sticky top-0 z-50 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+          
+          {/* Logo & Operational Identity */}
+          <div className="flex items-center gap-4">
+            <div className="relative group w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/10 overflow-hidden cursor-pointer border border-amber-400/20">
+              {logo ? (
+                <img src={logo} alt="FX Sniper Logo" className="w-full h-full object-cover" />
+              ) : (
+                <Crosshair className="w-7 h-7 text-slate-950 animate-pulse" />
+              )}
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={handleLogoUpload} 
+                className="absolute inset-0 opacity-0 cursor-pointer" 
+                title="Upload custom tactical deployment unit logo"
+              />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-black tracking-wider bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 bg-clip-text text-transparent">
+                  FX SNIPER CODE II
+                </h1>
+                <span className="text-[10px] bg-red-950 border border-red-500/30 text-red-400 px-1.5 py-0.5 rounded font-mono font-bold tracking-widest animate-pulse">
+                  CXO LIVE
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 font-mono tracking-tight">THE FX SNIPER KITCHEN II</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-4xl font-bold tracking-tighter uppercase">THE FX SNIPER KITCHEN II</h1>
-            <p className="text-[#B08D57] tracking-widest text-xs uppercase">One Shot, One Kill 💥</p>
+
+          {/* Running Context Stats */}
+          <div className="flex flex-wrap items-center gap-3 sm:gap-6 font-mono text-xs">
+            <div className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5">
+              <span className="text-slate-500 block text-[10px] uppercase">R-Total</span>
+              <span className="text-amber-400 font-bold">+{currentRTotal}R</span>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5">
+              <span className="text-slate-500 block text-[10px] uppercase">Demo Wallet</span>
+              <span className="text-emerald-400 font-bold">${calculatedBalance}</span>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5">
+              <span className="text-slate-500 block text-[10px] uppercase">Target Tracker</span>
+              <span className="text-slate-300 font-bold">{trades.filter(t => t.result === 'WIN').length} / 50</span>
+            </div>
+
+            {/* Sound Toggle */}
+            <button 
+              onClick={() => { setSoundEnabled(!soundEnabled); playUISound('click'); }}
+              className={`p-2 rounded-lg border transition-colors ${soundEnabled ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}
+              title={soundEnabled ? "Mute UI Feedback" : "Unmute UI Feedback"}
+            >
+              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            </button>
           </div>
         </div>
-        <button 
-          onClick={() => setShowModal(true)}
-          className="bg-[#B08D57] text-[#050506] px-6 py-3 font-bold flex items-center gap-2 hover:bg-[#E3C66A] transition-all"
-        >
-          <Plus size={20} /> LOG EXTRACTION
-        </button>
       </header>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-4 gap-6">
-        <div className="col-span-3 bg-[#14151A] p-6 border border-[#2F323A]">
-          <h2 className="text-[#B08D57] mb-4 uppercase text-sm border-b border-[#2F323A] pb-2">Active Journal</h2>
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-[#666] text-xs">
-                <th>PAIR</th>
-                <th>RESULT</th>
-                <th>STATUS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {trades.map(t => (
-                <tr key={t.id} className="border-b border-[#2F323A]">
-                  <td className="py-4">{t.pair}</td>
-                  <td className="text-[#E3C66A]">{t.result}</td>
-                  <td className="text-[#10B981]">{t.status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Side Panel */}
-        <div className="space-y-6">
-          <div className="bg-[#14151A] p-6 border border-[#2F323A]">
-            <Brain className="text-[#E3C66A] mb-2" />
-            <h3 className="font-bold mb-2">AI COACH</h3>
-            <p className="text-xs leading-relaxed text-[#666]">Current R-Total: +5.98R. Maintain the 1-Loss rule. Your discipline is high.</p>
-          </div>
-        </div>
+      {/* VERSE INSCRIPTION BAR */}
+      <div className="bg-gradient-to-r from-slate-950 via-amber-950/20 to-slate-950 border-b border-slate-900 py-2 px-4 text-center">
+        <p className="text-xs text-amber-200/70 italic tracking-wide">
+          &ldquo;Ponder the path of thy feet, and let all thy ways be established.&rdquo; — Proverbs 4:26 (KJV) 📖⚖️
+        </p>
       </div>
 
-      {/* Journal Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center">
-          <div className="bg-[#14151A] p-8 border-2 border-[#B08D57] w-96">
-            <h2 className="text-2xl font-bold mb-6 uppercase">New Extraction</h2>
-            <input className="w-full bg-[#050506] border border-[#2F323A] p-3 mb-4 text-white" placeholder="Pair (e.g. GBP/USD)" />
-            <button onClick={() => setShowModal(false)} className="w-full bg-[#B08D57] py-3 text-black font-bold">SUBMIT</button>
-          </div>
+      {/* APPLICATION CONTAINER */}
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        
+        {/* TAB MATRIX CONTROL */}
+        <div className="flex flex-wrap gap-2 border-b border-slate-900 pb-4 mb-8">
+          {['Overview', 'Trade Journal', 'Analytics', 'AI Coach', 'Calendar', 'Goals'].map((tab) => {
+            const icons = {
+              Overview: <Activity className="w-4 h-4" />,
+              'Trade Journal': <BookOpen className="w-4 h-4" />,
+              Analytics: <TrendingUp className="w-4 h-4" />,
+              'AI Coach': <Brain className="w-4 h-4" />,
+              Calendar: <Calendar className="w-4 h-4" />,
+              Goals: <Target className="w-4 h-4" />
+            };
+            return (
+              <button
+                key={tab}
+                onClick={() => { setActiveTab(tab); playUISound('click'); }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all font-mono duration-150 ${
+                  activeTab === tab 
+                    ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-bold shadow-lg shadow-amber-500/10' 
+                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900/60'
+                }`}
+              >
+                {icons[tab]}
+                {tab}
+              </button>
+            );
+          })}
         </div>
-      )}
+
+        {/* --- SECTION I: OVERVIEW VIEW --- */}
+        {activeTab === 'Overview' && (
+          <div className="space-y-8 animate-fadeIn">
+            
+            {/* MOTTO CORE CALLOUT */}
+            <div className="bg-gradient-to-r from-red-950/40 via-slate-900 to-slate-900 border border-red-900/40 p-4 rounded-xl flex justify-between items-center">
+              <div>
+                <span className="text-red-500 font-mono text-xs tracking-widest uppercase block font-bold">Motto Operational Directive</span>
+                <h3 className="text-xl font-black text-slate-100 tracking-wider">ONE SHOT, ONE KILL! 💥</h3>
+              </div>
+              <div className="text-right font-mono text-xs text-slate-400">
+                <span className="block text-slate-500">Execution Limit</span>
+                <span className="text-red-400 font-bold">Max 1 Per Day</span>
+              </div>
+            </div>
+
+            {/* PERFORMANCE HUD BLOCKS */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl backdrop-blur-md">
+                <span className="text-slate-500 text-xs font-mono block">WIN RATE (LIVE)</span>
+                <span className="text-2xl font-black font-mono text-emerald-400">{winRate}%</span>
+                <span className="text-[10px] text-slate-400 block mt-1">{totalWins} Wins / {totalLosses} Losses</span>
+              </div>
+              <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl backdrop-blur-md">
+                <span className="text-slate-500 text-xs font-mono block">BETA VETO METRICS</span>
+                <span className="text-2xl font-black font-mono text-amber-500">{totalVetoes}</span>
+                <span className="text-[10px] text-amber-400/80 block mt-1">Capital Preserved Safely</span>
+              </div>
+              <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl backdrop-blur-md">
+                <span className="text-slate-500 text-xs font-mono block">CURRENT STREAK</span>
+                <span className="text-2xl font-black font-mono text-indigo-400">+{currentStreak}</span>
+                <span className="text-[10px] text-slate-400 block mt-1">Surgical Extractions</span>
+              </div>
+              <div className="bg-slate-900/40 border border-slate-900 p-4 rounded-xl backdrop-blur-md">
+                <span className="text-slate-500 text-xs font-mono block">TOTAL ATTEMPTS</span>
+                <span className="text-2xl font-black font-mono text-slate-300">{totalStrikesAttempted}</span>
+                <span className="text-[10px] text-slate-500 block mt-1">System Commands Ran</span>
+              </div>
+            </div>
+
+            {/* DEPLOYMENT BOUNDARIES & APPROVED ASSETS */}
+            <div className="grid md:grid-cols-2 gap-6">
+              
+              {/* Tactical Session Windows */}
+              <div className="bg-slate-900/20 border border-slate-900 rounded-xl p-5">
+                <h3 className="text-sm font-bold tracking-wider text-amber-400 font-mono mb-4 flex items-center gap-2">
+                  <Calendar className="w-4 h-4" /> TRADING WINDOWS (WAT)
+                </h3>
+                <div className="space-y-2 font-mono text-xs">
+                  {[
+                    { day: 'MON', hours: '07:30 - 09:30' },
+                    { day: 'TUE', hours: '08:00 - 10:30' },
+                    { day: 'WED', hours: '08:00 - 10:00' },
+                    { day: 'THU', hours: '15:30 - 17:30' },
+                    { day: 'FRI', hours: '16:00 - 17:30' },
+                  ].map((w, index) => (
+                    <div key={index} className="flex justify-between border-b border-slate-900/60 pb-1.5 last:border-0">
+                      <span className="text-slate-400 font-bold">{w.day}</span>
+                      <span className="text-slate-200">{w.hours}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Asset Matrix Rules */}
+              <div className="bg-slate-900/20 border border-slate-900 rounded-xl p-5">
+                <h3 className="text-sm font-bold tracking-wider text-amber-400 font-mono mb-4 flex items-center gap-2">
+                  <Target className="w-4 h-4" /> APPROVED ASSETS & RISK BOUNDS
+                </h3>
+                <div className="space-y-3 text-xs font-mono">
+                  <div className="flex justify-between items-center border-b border-slate-900/60 pb-2">
+                    <span className="text-slate-400">GBP/USD (The Cable) 🇬🇧🇺🇸</span>
+                    <span className="bg-slate-900 text-slate-300 px-2 py-0.5 rounded text-[10px]">Tier-1</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-slate-900/60 pb-2">
+                    <span className="text-slate-400">AUD/USD (The Aussie) 🇦🇺🇺🇸</span>
+                    <span className="bg-slate-900 text-slate-300 px-2 py-0.5 rounded text-[10px]">Tier-1</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-slate-900/60 pb-2">
+                    <span className="text-slate-400">EUR/GBP (The Chunnel) 🇪🇺🇬🇧</span>
+                    <span className="bg-slate-900 text-slate-300 px-2 py-0.5 rounded text-[10px]">Tier-1</span>
+                  </div>
+                  <div className="bg-amber-950/20 border border-amber-900/40 p-2 rounded text-amber-300/90 text-[11px] leading-relaxed">
+                    <strong>Rule Framework:</strong> Fixed Lot Size 0.01 non-negotiable. 1-Loss or 1-Win closes the kitchen session instantly.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* LAW OF NEWS VETO PANEL */}
+            <div className="bg-slate-900/20 border border-slate-900 rounded-xl p-6">
+              <h3 className="text-sm font-bold tracking-wider text-red-400 font-mono mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-500" /> LAW OF NEWS VETO – MANDATORY PAUSE PROTOCOL
+              </h3>
+              <div className="grid md:grid-cols-3 gap-4 font-mono text-xs">
+                <div className="border border-red-900/30 bg-red-950/10 p-3 rounded-lg">
+                  <span className="text-red-400 font-bold block mb-1">🔴 RED IMPACT</span>
+                  <p className="text-slate-400 text-[11px] mb-2">Interest Rates, NFP, CPI, GDP</p>
+                  <span className="text-slate-200 font-bold block">T-5 to T+60 Mins Pause</span>
+                </div>
+                <div className="border border-amber-900/30 bg-amber-950/10 p-3 rounded-lg">
+                  <span className="text-amber-500 font-bold block mb-1">🟠 ORANGE IMPACT</span>
+                  <p className="text-slate-400 text-[11px] mb-2">PMI, Core Inflation, Speeches</p>
+                  <span className="text-slate-200 font-bold block">T-2 to T+30 Mins Pause</span>
+                </div>
+                <div className="border border-slate-800 bg-slate-900/40 p-3 rounded-lg">
+                  <span className="text-slate-400 font-bold block mb-1">🟡 YELLOW IMPACT</span>
+                  <p className="text-slate-400 text-[11px] mb-2">Unemployment, Retail Sales</p>
+                  <span className="text-slate-400 block font-bold">No Auto Pause / Beta Audit</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- SECTION II: TRADE JOURNAL VIEW --- */}
+        {activeTab === 'Trade Journal' && (
+          <div className="space-y-8 animate-fadeIn">
+            
+            {/* MANUAL SURGICAL ENTRY FORM */}
+            <form onSubmit={handleAddTrade} className="bg-slate-900/30 border border-slate-900 p-6 rounded-xl space-y-4">
+              <h3 className="text-sm font-bold tracking-wider text-amber-400 font-mono uppercase mb-2">
+                Log New Tactical Extraction/Veto
+              </h3>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs">
+                <div>
+                  <label className="text-slate-500 block mb-1">EXECUTION DATE</label>
+                  <input 
+                    type="date" 
+                    value={newTrade.date} 
+                    onChange={e => setNewTrade({...newTrade, date: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 p-2 rounded focus:border-amber-500 outline-none text-slate-200"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-500 block mb-1">PAIR IDENTIFIER</label>
+                  <select 
+                    value={newTrade.pair} 
+                    onChange={e => setNewTrade({...newTrade, pair: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 p-2 rounded focus:border-amber-500 outline-none text-slate-200"
+                  >
+                    <option>GBP/USD</option>
+                    <option>AUD/USD</option>
+                    <option>EUR/GBP</option>
+                    <option>ALL</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-slate-500 block mb-1">STRIKE DIRECTION</label>
+                  <select 
+                    value={newTrade.direction} 
+                    onChange={e => setNewTrade({...newTrade, direction: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 p-2 rounded focus:border-amber-500 outline-none text-slate-200"
+                  >
+                    <option>BUY</option>
+                    <option>SELL</option>
+                    <option>NONE</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-slate-500 block mb-1">SESSION DECISION STATUS</label>
+                  <select 
+                    value={newTrade.result} 
+                    onChange={e => setNewTrade({...newTrade, result: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 p-2 rounded focus:border-amber-500 outline-none text-slate-200"
+                  >
+                    <option>WIN</option>
+                    <option>LOSS</option>
+                    <option>VETO</option>
+                    <option>SCRATCH</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs">
+                <div>
+                  <label className="text-slate-500 block mb-1">PROFIT ($ DEMO TALLY)</label>
+                  <input 
+                    type="number" step="0.01" placeholder="e.g. 1.20" 
+                    value={newTrade.profit} 
+                    onChange={e => setNewTrade({...newTrade, profit: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 p-2 rounded focus:border-amber-500 outline-none text-slate-200"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-500 block mb-1">RISK UNIT REWARD VALUE (R)</label>
+                  <input 
+                    type="number" step="0.01" placeholder="e.g. 1.5" 
+                    value={newTrade.rValue} 
+                    onChange={e => setNewTrade({...newTrade, rValue: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 p-2 rounded focus:border-amber-500 outline-none text-slate-200"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-500 block mb-1">PRE-EXECUTION STATE</label>
+                  <input 
+                    type="text" placeholder="e.g. Tempted, Calm" 
+                    value={newTrade.emotionBefore} 
+                    onChange={e => setNewTrade({...newTrade, emotionBefore: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 p-2 rounded focus:border-amber-500 outline-none text-slate-200"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-500 block mb-1">POST-EXECUTION STATE</label>
+                  <input 
+                    type="text" placeholder="e.g. Confident, Safe" 
+                    value={newTrade.emotionAfter} 
+                    onChange={e => setNewTrade({...newTrade, emotionAfter: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 p-2 rounded focus:border-amber-500 outline-none text-slate-200"
+                  />
+                </div>
+              </div>
+
+              <div className="font-mono text-xs">
+                <label className="text-slate-500 block mb-1">CRITICAL COMMAND DETAILS / ENGINE ANALYSIS REASON</label>
+                <input 
+                  type="text" 
+                  placeholder="Paste explicit engine output logs or specific macro veto justifications..."
+                  value={newTrade.note}
+                  onChange={e => setNewTrade({...newTrade, note: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 p-2 rounded focus:border-amber-500 outline-none text-slate-200"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-between items-center pt-2">
+                <div className="flex items-center gap-2 text-slate-500 font-mono text-xs">
+                  <Upload className="w-4 h-4 text-slate-600" />
+                  <span>Screenshots tied to tactical window coordinates</span>
+                </div>
+                <button 
+                  type="submit"
+                  className="bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 px-4 py-2 rounded font-mono font-bold text-xs shadow-md shadow-amber-500/10 hover:brightness-110 transition-all"
+                >
+                  COMMIT TO LEDGER 🎯
+                </button>
+              </div>
+            </form>
+
+            {/* HISTORICAL LOG FILTER CONTROL */}
+            <div className="flex justify-between items-center border-b border-slate-900 pb-2">
+              <h3 className="text-xs font-mono tracking-widest text-slate-400 uppercase font-bold">Tactical Ledger Manifest</h3>
+              <div className="flex items-center gap-2 font-mono text-xs">
+                <Filter className="w-3.5 h-3.5 text-slate-500" />
+                <select 
+                  value={filterPair} 
+                  onChange={e => setFilterPair(e.target.value)}
+                  className="bg-slate-900 border border-slate-800 rounded p-1 text-slate-300 outline-none"
+                >
+                  <option value="ALL">ALL PAIRS</option>
+                  <option value="GBP/USD">GBP/USD</option>
+                  <option value="AUD/USD">AUD/USD</option>
+                  <option value="EUR/GBP">EUR/GBP</option>
+                </select>
+              </div>
+            </div>
+
+            {/* JOURNAL ENTRIES ARCHIVE */}
+            <div className="space-y-4">
+              {trades
+                .filter(t => filterPair === 'ALL' || t.pair === filterPair)
+                .map((trade) => (
+                  <div 
+                    key={trade.id} 
+                    className={`p-4 rounded-xl border transition-all ${
+                      trade.result === 'WIN' ? 'bg-emerald-950/10 border-emerald-900/30 hover:bg-emerald-950/20' :
+                      trade.result === 'LOSS' ? 'bg-red-950/10 border-red-900/30 hover:bg-red-950/20' :
+                      trade.result === 'SCRATCH' ? 'bg-slate-900/60 border-slate-800' :
+                      'bg-slate-900/20 border-slate-900/80 grayscale-[30%] opacity-80'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+                      <div className="flex items-center gap-3 font-mono text-xs">
+                        <span className="text-slate-500">{trade.date}</span>
+                        <span className="bg-slate-950 border border-slate-800 px-2 py-0.5 rounded text-slate-300 font-bold">
+                          {trade.pair}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${trade.direction === 'BUY' ? 'bg-emerald-500/10 text-emerald-400' : trade.direction === 'SELL' ? 'bg-red-500/10 text-red-400' : 'bg-slate-800 text-slate-400'}`}>
+                          {trade.direction}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 font-mono text-xs">
+                        {trade.result === 'WIN' && <span className="bg-emerald-500 text-slate-950 font-black px-2 py-0.5 rounded text-[10px]">TP HIT (+{trade.rValue}R)</span>}
+                        {trade.result === 'LOSS' && <span className="bg-red-600 text-slate-100 font-black px-2 py-0.5 rounded text-[10px]">SL HIT ({trade.rValue}R)</span>}
+                        {trade.result === 'VETO' && <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded text-[10px]">SYSTEM VETO</span>}
+                        {trade.result === 'SCRATCH' && <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded text-[10px]">SCRATCH BALANCE</span>}
+                        <span className="text-slate-400 font-bold">${trade.profit >= 0 ? `+${trade.profit.toFixed(2)}` : trade.profit.toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-300 font-sans leading-relaxed mb-2">{trade.note}</p>
+                    <div className="flex gap-4 border-t border-slate-900/60 pt-2 text-[10px] font-mono text-slate-500">
+                      <span>Psych Before: <strong className="text-slate-400">{trade.emotionBefore || 'None'}</strong></span>
+                      <span>Psych After: <strong className="text-slate-400">{trade.emotionAfter || 'None'}</strong></span>
+                      {trade.phase && <span className="ml-auto text-amber-500/60">{trade.phase}</span>}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* --- SECTION III: ADVANCED VISUAL ANALYTICS --- */}
+        {activeTab === 'Analytics' && (
+          <div className="space-y-8 animate-fadeIn">
+            <div className="grid md:grid-cols-2 gap-6">
+              
+              {/* Distribution Metric Panel */}
+              <div className="bg-slate-900/30 border border-slate-900 p-5 rounded-xl">
+                <h3 className="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase mb-4">
+                  Win / Loss / Veto System Weight Distribution
+                </h3>
+                <div className="space-y-4 font-mono text-xs">
+                  <div>
+                    <div className="flex justify-between text-slate-400 mb-1">
+                      <span>Veto Executions (Capital Preserved)</span>
+                      <span>{((totalVetoes / totalStrikesAttempted) * 100).toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-900">
+                      <div className="bg-amber-500 h-full" style={{ width: `${(totalVetoes / totalStrikesAttempted) * 100}%` }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-slate-400 mb-1">
+                      <span>Surgical Wins (Take Profit Filled)</span>
+                      <span>{((totalWins / totalStrikesAttempted) * 100).toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-900">
+                      <div className="bg-emerald-500 h-full" style={{ width: `${(totalWins / totalStrikesAttempted) * 100}%` }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-slate-400 mb-1">
+                      <span>System Losses / Scratches</span>
+                      <span>{(((totalLosses + trades.filter(t => t.result === 'SCRATCH').length) / totalStrikesAttempted) * 100).toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-900">
+                      <div className="bg-red-500 h-full" style={{ width: `${((totalLosses + trades.filter(t => t.result === 'SCRATCH').length) / totalStrikesAttempted) * 100}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pair Efficiency Engine */}
+              <div className="bg-slate-900/30 border border-slate-900 p-5 rounded-xl">
+                <h3 className="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase mb-4">
+                  Asset Efficiency Velocity Matrix
+                </h3>
+                <div className="space-y-3 font-mono text-xs">
+                  {['GBP/USD', 'AUD/USD', 'EUR/GBP'].map(p => {
+                    const pairTrades = trades.filter(t => t.pair === p);
+                    const pairWins = pairTrades.filter(t => t.result === 'WIN').length;
+                    const pairTotal = pairTrades.filter(t => t.result === 'WIN' || t.result === 'LOSS').length;
+                    const rate = pairTotal > 0 ? ((pairWins / pairTotal) * 100).toFixed(0) : '0';
+                    return (
+                      <div key={p} className="flex justify-between items-center p-2 bg-slate-950 border border-slate-900 rounded">
+                        <span className="text-slate-300 font-bold">{p}</span>
+                        <div className="text-right">
+                          <span className="text-emerald-400 font-bold block">{rate}% Win Rate</span>
+                          <span className="text-[10px] text-slate-500">{pairTrades.length} Tracked Entries</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* R-GROWTH TRACKER TIMELINE */}
+            <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-xl">
+              <h3 className="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase mb-4">
+                Cumulative Performance Capital Growth Matrix (R-Units Timeline)
+              </h3>
+              <div className="h-28 flex items-end gap-1.5 border-b border-slate-800 pb-2 pt-4">
+                {trades.map((t, idx) => {
+                  const heightPercentage = Math.min(Math.max((Number(t.rValue) + 1) * 30, 15), 100);
+                  return (
+                    <div key={idx} className="flex-1 group relative flex flex-col items-center">
+                      <div 
+                        style={{ height: `${heightPercentage}%` }}
+                        className={`w-full rounded-t transition-all cursor-pointer ${
+                          t.result === 'WIN' ? 'bg-gradient-to-t from-emerald-600 to-emerald-400' :
+                          t.result === 'LOSS' ? 'bg-gradient-to-t from-red-700 to-red-500' :
+                          t.result === 'SCRATCH' ? 'bg-slate-600' : 'bg-amber-500/40'
+                        }`}
+                      ></div>
+                      {/* Floating Tooltip */}
+                      <div className="absolute bottom-full mb-2 hidden group-hover:block bg-slate-950 border border-slate-800 text-[10px] p-2 rounded whitespace-nowrap z-10 font-mono shadow-xl">
+                        <p className="text-amber-400 font-bold">{t.pair}</p>
+                        <p className="text-slate-300">{t.result}: {t.rValue}R</p>
+                        <p className="text-slate-500 text-[9px]">{t.date}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex justify-between font-mono text-[9px] text-slate-600 pt-2">
+                <span>Initialization (Day 1)</span>
+                <span>Milestone 1 Breach</span>
+                <span>Current Processing Session</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- SECTION IV: AI TRADING COACH --- */}
+        {activeTab === 'AI Coach' && (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-amber-500/20 rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/30">
+                  <Brain className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold tracking-wider font-mono text-slate-200">
+                    AI STRATEGIC DEBRIEF ENGINE
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-mono">Real-time analytical analysis of current processing logs</p>
+                </div>
+              </div>
+
+              {/* Live AI Feedback Generation Block */}
+              <div className="space-y-4 font-mono text-xs">
+                <div className="bg-slate-950 border border-slate-900 p-4 rounded-lg leading-relaxed">
+                  <span className="text-amber-400 font-bold block mb-1">🔥 Systemic Execution Evaluation:</span>
+                  <p className="text-slate-300">
+                    CXO, your adherence to the <strong className="text-amber-300">Veto Protocol</strong> is highly efficient. Out of {totalStrikesAttempted} execution scanning intervals, you successfully stood down on {totalVetoes} instances. This represents an institutional-grade capital protection vector. You are not manufacturing fake positions due to boredom.
+                  </p>
+                </div>
+
+                <div className="bg-slate-950 border border-slate-900 p-4 rounded-lg leading-relaxed">
+                  <span className="text-red-400 font-bold block mb-1">⚠️ Psychological Warning Matrix:</span>
+                  <p className="text-slate-300">
+                    On <strong className="text-red-400">Day 6 (Mon, 18 May)</strong>, you explicitly noted: <span className="italic text-slate-400">&ldquo;Watched the live candles during the vertical rally continuously...&rdquo;</span> This represents a minor leak in your adherence to the <strong className="text-slate-300">Face-Down Protocol</strong>. Watching live candle prints feeds cognitive bias and heightens erratic neural response paths. Close the app instantly upon target verification.
+                  </p>
+                </div>
+
+                <div className="bg-slate-950 border border-slate-900 p-4 rounded-lg leading-relaxed">
+                  <span className="text-emerald-400 font-bold block mb-1">🎯 Automated Target Focus Checklist:</span>
+                  <ul className="list-disc pl-4 space-y-1 mt-2 text-slate-300">
+                    <li>Maintain a clean zero-impact status during incoming USD/GBP macro red calendar blocks.</li>
+                    <li>Verify Alpha re-synchronization vectors precisely down to 1.5R metrics.</li>
+                    <li>Forbid platform exposure during choppy Friday structural exhaustion periods.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- SECTION V: CALENDAR METRIC GRID --- */}
+        {activeTab === 'Calendar' && (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="bg-slate-900/30 border border-slate-900 p-6 rounded-xl">
+              <h3 className="text-xs font-mono font-bold tracking-widest text-slate-400 uppercase mb-4">
+                Chronological Profit & Loss Grid Tracker
+              </h3>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 font-mono text-xs">
+                {[
+                  { title: 'Day 1 (11 May)', status: 'VETO', color: 'bg-slate-950 text-slate-500 border-slate-900', cash: '$0.00', desc: 'DXY Trap Avoided' },
+                  { title: 'Day 2 (12 May)', status: 'PROFIT', color: 'bg-emerald-950/20 text-emerald-400 border-emerald-900/30', cash: '+$1.20', desc: 'GBP/USD TP Hit' },
+                  { title: 'Day 3 (13 May)', status: 'VETO', color: 'bg-slate-950 text-slate-500 border-slate-900', cash: '$0.00', desc: 'No Hunt in Fog' },
+                  { title: 'Day 4 (14 May)', status: 'PROFIT', color: 'bg-emerald-950/20 text-emerald-400 border-emerald-900/30', cash: '+$2.40', desc: 'Cable Breakout' },
+                  { title: 'Day 5 (15 May)', status: 'SCRATCH', color: 'bg-slate-900 text-slate-400 border-slate-800', cash: '-$0.01', desc: 'Friday Purge' },
+                  { title: 'Day 6 (18 May)', status: 'PROFIT', color: 'bg-emerald-950/20 text-emerald-400 border-emerald-900/30', cash: '+$1.20', desc: 'Dynamic Sync' },
+                  { title: 'Day 7 (19 May)', status: 'PROFIT', color: 'bg-emerald-950/20 text-emerald-400 border-emerald-900/30', cash: '+$1.20', desc: 'Milestone Breach' },
+                  { title: 'Day 8 (20 May)', status: 'VETO', color: 'bg-slate-950 text-slate-500 border-slate-900', cash: '$0.00', desc: 'Low Volatility Veto' },
+                  { title: 'Day 9 (21 May)', status: 'PENDING', color: 'bg-amber-950/10 text-amber-500 border-amber-900/20 border-dashed animate-pulse', cash: '0.00', desc: 'Upcoming Block' },
+                ].map((d, idx) => (
+                  <div key={idx} className={`p-3 rounded-lg border flex flex-col justify-between h-24 ${d.color}`}>
+                    <div className="flex justify-between items-start">
+                      <span className="font-bold text-[10px] text-slate-400">{d.title}</span>
+                      <span className="text-[9px] font-black tracking-widest uppercase">{d.status}</span>
+                    </div>
+                    <div>
+                      <span className="text-base font-black block">{d.cash}</span>
+                      <span className="text-[9px] text-slate-500 block truncate">{d.desc}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- SECTION VI: GOALS & ACHIEVEMENTS TRACKER --- */}
+        {activeTab === 'Goals' && (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="grid md:grid-cols-2 gap-6">
+              
+              {/* LIVE EDITABLE TARGET CONSOLE */}
+              <div className="bg-slate-900/30 border border-slate-900 p-5 rounded-xl space-y-4">
+                <h3 className="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase">
+                  Tactical Target Parameters (Editable Console)
+                </h3>
+                <div className="space-y-3 font-mono text-xs">
+                  <div>
+                    <label className="text-slate-500 block mb-1">CURRENT DEPLOYMENT PHASE</label>
+                    <input 
+                      type="text" 
+                      value={goals.currentPhase}
+                      onChange={e => setGoals({...goals, currentPhase: e.target.value})}
+                      className="w-full bg-slate-950 border border-slate-800 p-2 rounded outline-none text-amber-400 font-bold focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-500 block mb-1">TOTAL TARGET EXTRACTION GOAL (R)</label>
+                    <input 
+                      type="number" 
+                      value={goals.targetR}
+                      onChange={e => setGoals({...goals, targetR: Number(e.target.value)})}
+                      className="w-full bg-slate-950 border border-slate-800 p-2 rounded outline-none text-slate-200 focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-500 block mb-1">TARGET DEMO BALANCE ($)</label>
+                    <input 
+                      type="number" 
+                      value={goals.targetCash}
+                      onChange={e => setGoals({...goals, targetCash: Number(e.target.value)})}
+                      className="w-full bg-slate-950 border border-slate-800 p-2 rounded outline-none text-slate-200 focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* ACHIEVEMENTS AND MILESTONES DEPLOYED */}
+              <div className="bg-slate-900/30 border border-slate-900 p-5 rounded-xl space-y-4">
+                <h3 className="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase">
+                  Systemic Achievement Badge Milestones
+                </h3>
+                
+                <div className="space-y-2 font-mono text-xs">
+                  <div className="flex items-center gap-3 p-2 bg-slate-950 border border-slate-900 rounded">
+                    <Award className="w-5 h-5 text-amber-400" />
+                    <div>
+                      <span className="block font-bold text-slate-200">MILESTONE 1 BREACHED 🥶</span>
+                      <span className="text-[10px] text-emerald-400">Successfully broke past the initial account benchmark level.</span>
+                    </div>
+                  </div>
+
+                  <div className={`flex items-center gap-3 p-2 bg-slate-950 border rounded transition-all ${Number(currentRTotal) >= 10 ? 'border-amber-500/30' : 'border-slate-900 opacity-50'}`}>
+                    <Zap className={`w-5 h-5 ${Number(currentRTotal) >= 10 ? 'text-amber-400' : 'text-slate-600'}`} />
+                    <div>
+                      <span className="block font-bold text-slate-200">10R HEAVY EXTRACTION</span>
+                      <span className="text-[10px] text-slate-500">Accumulate over 10R in structural processing gains.</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-2 bg-slate-950 border border-slate-900 rounded">
+                    <Shield className="w-5 h-5 text-indigo-400" />
+                    <div>
+                      <span className="block font-bold text-slate-200">TACTICAL VETO SHIELD</span>
+                      <span className="text-[10px] text-indigo-400">Log 5 pristine defensive stand-downs without error.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* DYNAMIC PROGRESS RADIAL MATRIX */}
+            <div className="bg-slate-900/30 border border-slate-900 p-5 rounded-xl">
+              <div className="flex justify-between font-mono text-xs text-slate-400 mb-2">
+                <span>Phase Operational Journey Progress</span>
+                <span className="text-amber-400 font-bold">{((Number(currentRTotal) / goals.targetR) * 100).toFixed(1)}% Complete</span>
+              </div>
+              <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-900">
+                <div 
+                  className="bg-gradient-to-r from-amber-500 via-yellow-400 to-emerald-500 h-full transition-all duration-300"
+                  style={{ width: `${Math.min(((Number(currentRTotal) / goals.targetR) * 100), 100)}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </main>
+
+      {/* FOOTER SYSTEM STATE STATUS */}
+      <footer className="border-t border-slate-900 mt-20 py-6 px-4 bg-slate-950/80">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 font-mono text-[10px] text-slate-600">
+          <p>&ldquo;The Strike is governed by Price, not Time.&rdquo; — THE PRINCIPLE OF STRUCTURAL SUPREMACY 🏛️</p>
+          <p className="text-slate-500">SYSTEM ARCHITECTURE MATRIX LOGGED SECURELY // 2026</p>
+        </div>
+      </footer>
+
     </div>
   );
-};
-
-export default KitchenDashboard;
+}
